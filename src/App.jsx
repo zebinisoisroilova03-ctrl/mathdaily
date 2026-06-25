@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Home from './pages/Home'
 
 function App() {
   const [step, setStep] = useState('welcome')
@@ -192,9 +193,11 @@ function App() {
 </div>
 
           {/* Kirish tugmasi */}
-          <button className="w-full bg-[#1a3a2a] text-white py-3 rounded-2xl font-medium hover:opacity-90 transition mb-4">
-            {lang === 'uz' ? 'Kirish' : 'Sign In'}
-          </button>
+          <button 
+  onClick={() => setStep('home')}
+  className="w-full bg-[#1a3a2a] text-white py-3 rounded-2xl font-medium hover:opacity-90 transition mb-4">
+  {lang === 'uz' ? 'Kirish' : 'Sign In'}
+</button>
 
           {/* Ro'yxatdan o'tish */}
           <p className="text-center text-sm text-gray-500">
@@ -205,6 +208,7 @@ function App() {
           </p>
         </div>
       )}
+      {step === 'home' && <Home lang={lang} />}
 
     </div>
   )
