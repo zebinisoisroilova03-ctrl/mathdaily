@@ -41,8 +41,7 @@ function App() {
   const t = text[lang]
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
-
+<div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 max-w-md mx-auto relative">
       {/* Til tugmasi */}
       <button
         onClick={() => setLang(lang === 'uz' ? 'en' : 'uz')}

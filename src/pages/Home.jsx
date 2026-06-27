@@ -32,7 +32,7 @@ function Home({ lang }) {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
+    <div className="min-h-screen bg-white pb-10 max-w-md mx-auto">
       <div className="bg-[#1a3a2a] text-white px-6 py-8">
         <p className="text-[#5DCAA5] text-sm mb-1">{text.greeting}</p>
         <h1 className="text-2xl font-bold">Math<span className="text-[#5DCAA5]">Daily</span></h1>
