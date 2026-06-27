@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Home from './pages/Home'
+import Exercise from './pages/Exercise'
 
 function App() {
   const [step, setStep] = useState('welcome')
@@ -35,20 +36,46 @@ function App() {
       parentSub: 'I monitor my child',
       next: 'Continue',
       langBtn: 'O\'zbek',
+    },
+    ru: {
+      title: 'MathDaily',
+      subtitle: 'Занимайтесь математикой каждый день',
+      start: 'Начать',
+      whoAreYou: 'Кто вы?',
+      student: '👦 Ученик',
+      studentSub: '5-15 лет',
+      teen: '🧑 Студент',
+      teenSub: '16-25 лет',
+      parent: '👨‍👩‍👧 Родитель',
+      parentSub: 'Слежу за ребёнком',
+      next: 'Продолжить',
+      langBtn: 'O\'zbek',
     }
+  
   }
 
   const t = text[lang]
 
   return (
 <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 max-w-md mx-auto relative">
+      
       {/* Til tugmasi */}
-      <button
-        onClick={() => setLang(lang === 'uz' ? 'en' : 'uz')}
-        className="absolute top-4 right-4 text-sm bg-white border border-gray-200 px-4 py-2 rounded-full text-gray-600 hover:bg-gray-100"
-      >
-        {t.langBtn}
-      </button>
+      {(step === 'welcome' || step === 'role' || step === 'login') && (
+      <div className="absolute top-4 right-4 flex gap-1">
+        <button
+          onClick={() => setLang('uz')}
+          className={`text-xs px-3 py-1.5 rounded-full border ${lang === 'uz' ? 'bg-[#1a3a2a] text-white border-[#1a3a2a]' : 'bg-white text-gray-500 border-gray-200'}`}
+        >UZ</button>
+        <button
+          onClick={() => setLang('ru')}
+          className={`text-xs px-3 py-1.5 rounded-full border ${lang === 'ru' ? 'bg-[#1a3a2a] text-white border-[#1a3a2a]' : 'bg-white text-gray-500 border-gray-200'}`}
+        >RU</button>
+        <button
+          onClick={() => setLang('en')}
+          className={`text-xs px-3 py-1.5 rounded-full border ${lang === 'en' ? 'bg-[#1a3a2a] text-white border-[#1a3a2a]' : 'bg-white text-gray-500 border-gray-200'}`}
+        >EN</button>
+      </div>
+      )}
 
       {/* WELCOME sahifasi */}
       {step === 'welcome' && (
@@ -143,27 +170,31 @@ function App() {
             onClick={() => setStep('role')}
             className="text-gray-400 mb-6 flex items-center gap-1 hover:text-gray-600"
           >
-            ← Orqaga
+            ← {lang === 'uz' ? 'Orqaga' : lang === 'ru' ? 'Назад' : 'Back'}
           </button>
 
           <h2 className="text-2xl font-bold text-[#1a3a2a] mb-2">
-            {role === 'student' ? '👦 O\'quvchi' : role === 'teen' ? '🧑 Talaba' : '👨‍👩‍👧 Ota-ona'}
+            {role === 'student'
+              ? (lang === 'uz' ? '👦 O\'quvchi' : lang === 'ru' ? '👦 Ученик' : '👦 Student')
+              : role === 'teen'
+              ? (lang === 'uz' ? '🧑 Talaba' : lang === 'ru' ? '🧑 Студент' : '🧑 Teenager')
+              : (lang === 'uz' ? '👨‍👩‍👧 Ota-ona' : lang === 'ru' ? '👨‍👩‍👧 Родитель' : '👨‍👩‍👧 Parent')}
           </h2>
           <p className="text-gray-500 text-sm mb-6">
-            {lang === 'uz' ? 'Hisobingizga kiring' : 'Sign in to your account'}
+            {lang === 'uz' ? 'Hisobingizga kiring' : lang === 'ru' ? 'Войдите в аккаунт' : 'Sign in to your account'}
           </p>
 
           {/* Google tugmasi */}
           <button className="w-full flex items-center justify-center gap-3 border border-gray-200 bg-white py-3 rounded-2xl mb-3 hover:bg-gray-50 transition font-medium text-gray-700">
             <img src="https://www.google.com/favicon.ico" className="w-5 h-5" />
-            {lang === 'uz' ? 'Google orqali kirish' : 'Continue with Google'}
+            {lang === 'uz' ? 'Google orqali kirish' : lang === 'ru' ? 'Войти через Google' : 'Continue with Google'}
           </button>
 
           {/* Chiziq */}
           <div className="flex items-center gap-3 mb-3">
             <div className="flex-1 h-px bg-gray-200"></div>
             <span className="text-gray-400 text-sm">
-              {lang === 'uz' ? 'yoki' : 'or'}
+              {lang === 'uz' ? 'yoki' : lang === 'ru' ? 'или' : 'or'}
             </span>
             <div className="flex-1 h-px bg-gray-200"></div>
           </div>
@@ -171,7 +202,7 @@ function App() {
           {/* Email */}
           <input
             type="email"
-            placeholder={lang === 'uz' ? 'Email manzilingiz' : 'Your email address'}
+            placeholder={lang === 'uz' ? 'Email manzilingiz' : lang === 'ru' ? 'Ваш email' : 'Your email address'}
             className="w-full border border-gray-200 rounded-2xl px-4 py-3 mb-3 outline-none focus:border-[#1a3a2a] transition"
           />
 
@@ -179,7 +210,7 @@ function App() {
           <div className="relative mb-4">
   <input
     type={showPassword ? 'text' : 'password'}
-    placeholder={lang === 'uz' ? 'Parol' : 'Password'}
+    placeholder={lang === 'uz' ? 'Parol' : lang === 'ru' ? 'Пароль' : 'Password'}
     className="w-full border border-gray-200 rounded-2xl px-4 py-3 outline-none focus:border-[#1a3a2a] transition"
   />
   <button
@@ -195,19 +226,20 @@ function App() {
           <button 
   onClick={() => setStep('home')}
   className="w-full bg-[#1a3a2a] text-white py-3 rounded-2xl font-medium hover:opacity-90 transition mb-4">
-  {lang === 'uz' ? 'Kirish' : 'Sign In'}
+  {lang === 'uz' ? 'Kirish' : lang === 'ru' ? 'Войти' : 'Sign In'}
 </button>
 
           {/* Ro'yxatdan o'tish */}
           <p className="text-center text-sm text-gray-500">
-            {lang === 'uz' ? 'Hisob yo\'q mi? ' : 'No account? '}
+            {lang === 'uz' ? 'Hisob yo\'qmi? ' : lang === 'ru' ? 'Нет аккаунта? ' : 'No account? '}
             <span className="text-[#1a3a2a] font-medium cursor-pointer hover:underline">
-              {lang === 'uz' ? 'Ro\'yxatdan o\'ting' : 'Sign up'}
+              {lang === 'uz' ? 'Ro\'yxatdan o\'ting' : lang === 'ru' ? 'Зарегистрироваться' : 'Sign up'}
             </span>
           </p>
         </div>
       )}
-      {step === 'home' && <Home lang={lang} />}
+      {step === 'home' && <Home lang={lang} setLang={setLang} setStep={setStep} />}
+      {step === 'exercise' && <Exercise lang={lang} setStep={setStep} />}
 
     </div>
   )
