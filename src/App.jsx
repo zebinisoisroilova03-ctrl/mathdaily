@@ -60,7 +60,7 @@ function App() {
 <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 max-w-md mx-auto relative">
       
       {/* Til tugmasi */}
-      {(step === 'welcome' || step === 'role' || step === 'login') && (
+      {step === 'welcome' && (
       <div className="absolute top-4 right-4 flex gap-1">
         <button
           onClick={() => setLang('uz')}

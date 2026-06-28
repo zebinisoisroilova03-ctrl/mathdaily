@@ -1,4 +1,7 @@
+import { useState } from 'react'
+
 function Home({ lang, setLang, setStep }) {
+  const [showTgWarning, setShowTgWarning] = useState(false)
   const t = {
     uz: {
       greeting: 'Xush kelibsiz!',
@@ -23,6 +26,10 @@ function Home({ lang, setLang, setStep }) {
       accuracy: 'Точность',
       tgChannel: 'Наш Telegram канал',
       continueLearning: 'ПРОДОЛЖИТЬ',
+      tgWarningTitle: 'Внимание!',
+      tgWarningText: 'Эта платформа создана для Узбекистана. Все видеоуроки в нашем Telegram канале только на узбекском языке. Продолжить?',
+      tgCancel: 'Отмена',
+      tgContinue: 'Продолжить',
       topicsList: [
         { name: 'Сложение и вычитание целых чисел', sub: '49 вопросов', badge: 'Новое', done: false },
         { name: 'Линейные уравнения', sub: 'Скоро', badge: 'Скоро', done: true },
@@ -37,6 +44,10 @@ function Home({ lang, setLang, setStep }) {
       accuracy: 'Accuracy rate',
       tgChannel: 'Our Telegram channel',
       continueLearning: 'CONTINUE LEARNING',
+      tgWarningTitle: 'Notice!',
+      tgWarningText: 'This platform is made for Uzbekistan. All video lessons in our Telegram channel are only in Uzbek. Continue?',
+      tgCancel: 'Cancel',
+      tgContinue: 'Continue',
       topicsList: [
         { name: 'Adding & Subtracting Integers', sub: '49 questions', badge: 'New', done: false },
         { name: 'Linear Equations', sub: 'Coming soon', badge: 'Soon', done: true },
@@ -51,11 +62,6 @@ function Home({ lang, setLang, setStep }) {
       {/* Header */}
       <div className="bg-[#1a3a2a] text-white px-6 py-5 flex items-center justify-between">
         <div className="text-xl font-bold">Math<span className="text-[#5DCAA5]">Daily</span></div>
-        <div className="flex gap-1">
-          <button onClick={() => setLang('uz')} className={`text-xs px-2.5 py-1 rounded-full border ${lang === 'uz' ? 'bg-[#5DCAA5] text-[#1a3a2a] border-[#5DCAA5] font-semibold' : 'border-white/30 text-white/70'}`}>UZ</button>
-          <button onClick={() => setLang('ru')} className={`text-xs px-2.5 py-1 rounded-full border ${lang === 'ru' ? 'bg-[#5DCAA5] text-[#1a3a2a] border-[#5DCAA5] font-semibold' : 'border-white/30 text-white/70'}`}>RU</button>
-          <button onClick={() => setLang('en')} className={`text-xs px-2.5 py-1 rounded-full border ${lang === 'en' ? 'bg-[#5DCAA5] text-[#1a3a2a] border-[#5DCAA5] font-semibold' : 'border-white/30 text-white/70'}`}>EN</button>
-        </div>
       </div>
 
       {/* Navigatsiya */}
@@ -115,10 +121,15 @@ function Home({ lang, setLang, setStep }) {
 
         {/* Telegram banner */}
         
-        <a href="https://t.me/videodarslarmatematika"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-3 bg-[#E1F5EE] border border-[#1D9E75] rounded-2xl px-4 py-3 mb-6 hover:bg-[#9FE1CB] transition"
+        <button
+          onClick={() => {
+            if (lang === 'uz') {
+              window.open('https://t.me/videodarslarmatematika', '_blank')
+            } else {
+              setShowTgWarning(true)
+            }
+          }}
+          className="w-full flex items-center gap-3 bg-[#E1F5EE] border border-[#1D9E75] rounded-2xl px-4 py-3 mb-6 hover:bg-[#9FE1CB] transition text-left"
         >
           <div className="w-10 h-10 bg-[#1a3a2a] rounded-xl flex items-center justify-center text-white font-bold">TG</div>
           <div className="flex-1">
@@ -126,7 +137,7 @@ function Home({ lang, setLang, setStep }) {
             <div className="text-xs text-[#0F6E56] opacity-75">@videodarslarmatematika</div>
           </div>
           <span className="text-[#0F6E56]">→</span>
-        </a>
+        </button>
 
         {/* Continue learning */}
         <div className="text-xs font-semibold text-gray-500 mb-3 tracking-wide">{text.continueLearning}</div>
@@ -154,6 +165,39 @@ function Home({ lang, setLang, setStep }) {
         </div>
 
       </div>
+
+      {/* Telegram ogohlantirish oynasi */}
+      {showTgWarning && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-6 z-50">
+          <div className="bg-white rounded-3xl px-6 py-6 max-w-sm w-full">
+            <div className="text-center mb-2">
+              <div className="w-12 h-12 bg-[#E1F5EE] rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">📢</span>
+              </div>
+              <h3 className="text-lg font-bold text-[#1a3a2a] mb-2">{text.tgWarningTitle}</h3>
+              <p className="text-sm text-gray-600 leading-relaxed">{text.tgWarningText}</p>
+            </div>
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={() => setShowTgWarning(false)}
+                className="flex-1 py-3 rounded-2xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition"
+              >
+                {text.tgCancel}
+              </button>
+              <button
+                onClick={() => {
+                  window.open('https://t.me/videodarslarmatematika', '_blank')
+                  setShowTgWarning(false)
+                }}
+                className="flex-1 py-3 rounded-2xl bg-[#1a3a2a] text-white font-medium hover:opacity-90 transition"
+              >
+                {text.tgContinue}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
