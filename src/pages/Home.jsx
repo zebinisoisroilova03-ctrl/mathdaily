@@ -82,7 +82,7 @@ function Home({ lang, setLang, setStep }) {
           <span className="text-lg">👑</span>
           <span className="text-xs">{text.nav.plans}</span>
         </button>
-        <button className="flex-1 py-3 flex flex-col items-center gap-1 text-gray-500">
+        <button onClick={() => setStep('profile')} className="flex-1 py-3 flex flex-col items-center gap-1 text-gray-500">
           <span className="text-lg">👤</span>
           <span className="text-xs">{text.nav.profile}</span>
         </button>

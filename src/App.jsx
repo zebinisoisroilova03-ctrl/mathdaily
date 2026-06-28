@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Home from './pages/Home'
 import Exercise from './pages/Exercise'
+import Profile from './pages/Profile'
 
 function App() {
   const [step, setStep] = useState('welcome')
@@ -57,8 +58,7 @@ function App() {
   const t = text[lang]
 
   return (
-<div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 max-w-md mx-auto relative">
-      
+<div className={`min-h-screen bg-white max-w-md mx-auto relative ${(step === 'welcome' || step === 'role' || step === 'login') ? 'flex flex-col items-center justify-center px-4' : ''}`}>      
       {/* Til tugmasi */}
       {step === 'welcome' && (
       <div className="absolute top-4 right-4 flex gap-1">
@@ -240,6 +240,7 @@ function App() {
       )}
       {step === 'home' && <Home lang={lang} setLang={setLang} setStep={setStep} />}
       {step === 'exercise' && <Exercise lang={lang} setStep={setStep} />}
+      {step === 'profile' && <Profile lang={lang} setLang={setLang} setStep={setStep} />}
 
     </div>
   )
