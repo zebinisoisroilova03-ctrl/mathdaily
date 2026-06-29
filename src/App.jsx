@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { supabase } from './supabaseClient'
 import Home from './pages/Home'
 import Exercise from './pages/Exercise'
 import Profile from './pages/Profile'
@@ -8,6 +9,10 @@ function App() {
   const [role, setRole] = useState('')
   const [lang, setLang] = useState('uz')
   const [showPassword, setShowPassword] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [authError, setAuthError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const text = {
     uz: {
@@ -53,6 +58,38 @@ function App() {
       langBtn: 'O\'zbek',
     }
   
+  }
+
+  // Ro'yxatdan o'tish
+  async function handleSignUp() {
+    setAuthError('')
+    setLoading(true)
+    const { error } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+    })
+    setLoading(false)
+    if (error) {
+      setAuthError(error.message)
+    } else {
+      setStep('home')
+    }
+  }
+
+  // Kirish
+  async function handleSignIn() {
+    setAuthError('')
+    setLoading(true)
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    })
+    setLoading(false)
+    if (error) {
+      setAuthError(error.message)
+    } else {
+      setStep('home')
+    }
   }
 
   const t = text[lang]
@@ -202,6 +239,8 @@ function App() {
           {/* Email */}
           <input
             type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             placeholder={lang === 'uz' ? 'Email manzilingiz' : lang === 'ru' ? 'Ваш email' : 'Your email address'}
             className="w-full border border-gray-200 rounded-2xl px-4 py-3 mb-3 outline-none focus:border-[#1a3a2a] transition"
           />
@@ -210,6 +249,8 @@ function App() {
           <div className="relative mb-4">
   <input
     type={showPassword ? 'text' : 'password'}
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
     placeholder={lang === 'uz' ? 'Parol' : lang === 'ru' ? 'Пароль' : 'Password'}
     className="w-full border border-gray-200 rounded-2xl px-4 py-3 outline-none focus:border-[#1a3a2a] transition"
   />
@@ -222,17 +263,27 @@ function App() {
   </button>
 </div>
 
+          {/* Xato xabari */}
+          {authError && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 mb-3 text-sm text-red-600">
+              {authError}
+            </div>
+          )}
+
           {/* Kirish tugmasi */}
           <button 
-  onClick={() => setStep('home')}
-  className="w-full bg-[#1a3a2a] text-white py-3 rounded-2xl font-medium hover:opacity-90 transition mb-4">
-  {lang === 'uz' ? 'Kirish' : lang === 'ru' ? 'Войти' : 'Sign In'}
-</button>
+            onClick={handleSignIn}
+            disabled={loading}
+            className="w-full bg-[#1a3a2a] text-white py-3 rounded-2xl font-medium hover:opacity-90 transition mb-4 disabled:opacity-50">
+            {loading ? '...' : (lang === 'uz' ? 'Kirish' : lang === 'ru' ? 'Войти' : 'Sign In')}
+          </button>
 
           {/* Ro'yxatdan o'tish */}
           <p className="text-center text-sm text-gray-500">
             {lang === 'uz' ? 'Hisob yo\'qmi? ' : lang === 'ru' ? 'Нет аккаунта? ' : 'No account? '}
-            <span className="text-[#1a3a2a] font-medium cursor-pointer hover:underline">
+            <span 
+              onClick={handleSignUp}
+              className="text-[#1a3a2a] font-medium cursor-pointer hover:underline">
               {lang === 'uz' ? 'Ro\'yxatdan o\'ting' : lang === 'ru' ? 'Зарегистрироваться' : 'Sign up'}
             </span>
           </p>
