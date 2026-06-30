@@ -161,6 +161,7 @@ function Auth({ lang, setLang }) {
 function App() {
   const [lang, setLang] = useState(() => localStorage.getItem('lang') || 'uz')
   const [session, setSession] = useState(null)
+  const [loadingSession, setLoadingSession] = useState(true)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -170,6 +171,7 @@ function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
+      setLoadingSession(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -180,12 +182,17 @@ function App() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Sessiya tekshirilayotganda — bo'sh ekran (miltillashни oldini oladi)
+  if (loadingSession) {
+    return <div className="min-h-screen bg-white"></div>
+  }
+
   return (
     <Routes>
       <Route path="/" element={<Auth lang={lang} setLang={setLang} />} />
-      <Route path="/home" element={<Home lang={lang} />} />
-      <Route path="/practice" element={<Exercise lang={lang} />} />
-      <Route path="/profile" element={<Profile lang={lang} setLang={setLang} />} />
+      <Route path="/home" element={session ? <Home lang={lang} /> : <Auth lang={lang} setLang={setLang} />} />
+      <Route path="/practice" element={session ? <Exercise lang={lang} /> : <Auth lang={lang} setLang={setLang} />} />
+      <Route path="/profile" element={session ? <Profile lang={lang} setLang={setLang} /> : <Auth lang={lang} setLang={setLang} />} />
     </Routes>
   )
 }
