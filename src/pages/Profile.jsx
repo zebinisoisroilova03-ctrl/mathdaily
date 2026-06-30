@@ -1,4 +1,8 @@
-function Profile({ lang, setLang, setStep }) {
+import { supabase } from '../supabaseClient'
+import { useNavigate } from 'react-router-dom'
+
+function Profile({ lang, setLang }) {
+  const navigate = useNavigate()
   const t = {
     uz: {
       nav: { home: 'Bosh', practice: 'Mashq', topics: 'Mavzular', plans: 'Tariflar', profile: 'Profil' },
@@ -67,11 +71,11 @@ function Profile({ lang, setLang, setStep }) {
 
       {/* Navigatsiya */}
       <div className="flex border-b border-gray-100">
-        <button onClick={() => setStep('home')} className="flex-1 py-3 flex flex-col items-center gap-1 text-gray-500">
+        <button onClick={() => navigate('/home')} className="flex-1 py-3 flex flex-col items-center gap-1 text-gray-500">
           <span className="text-lg">🏠</span>
           <span className="text-xs">{text.nav.home}</span>
         </button>
-        <button onClick={() => setStep('exercise')} className="flex-1 py-3 flex flex-col items-center gap-1 text-gray-500">
+        <button onClick={() => navigate('/practice')} className="flex-1 py-3 flex flex-col items-center gap-1 text-gray-500">
           <span className="text-lg">✏️</span>
           <span className="text-xs">{text.nav.practice}</span>
         </button>
@@ -168,7 +172,9 @@ function Profile({ lang, setLang, setStep }) {
         {/* Hisob */}
         <div className="text-xs font-semibold text-gray-500 mb-3 tracking-wide">{text.account.toUpperCase()}</div>
         <button
-          onClick={() => setStep('welcome')}
+          onClick={async () => {
+            await supabase.auth.signOut()
+          }}
           className="w-full bg-red-50 text-red-600 py-3 rounded-2xl font-medium hover:bg-red-100 transition"
         >
           {text.logout}

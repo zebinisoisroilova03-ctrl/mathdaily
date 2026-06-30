@@ -1,5 +1,5 @@
 import { useState } from 'react'
-
+import { useNavigate } from 'react-router-dom'
 const exercises = [
   { question: '−(−3) − (−3)', answer: 6, options: [7, 5, 6, 8] },
   { question: '−(−3) − (−2)', answer: 5, options: [5, 7, 4, 6] },
@@ -58,7 +58,8 @@ const VIDEO_LINKS = {
   en: 'https://youtu.be/C38B33ZywWs',
 }
 
-function Exercise({ lang, setStep }) {
+function Exercise({ lang }) {
+  const navigate = useNavigate()
   const [current, setCurrent] = useState(0)
   const [selected, setSelected] = useState(null)
   const [answered, setAnswered] = useState(false)
@@ -126,7 +127,7 @@ function Exercise({ lang, setStep }) {
   return (
     <div className="min-h-screen bg-white max-w-md mx-auto px-5 py-6">
       <button
-        onClick={() => setStep('home')}
+        onClick={() => navigate('/home')}
         className="text-gray-400 mb-4 flex items-center gap-1 hover:text-gray-600"
       >
         ← {text.back}

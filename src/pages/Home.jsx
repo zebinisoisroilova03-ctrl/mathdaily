@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
-function Home({ lang, setLang, setStep }) {
+function Home({ lang }) {
+  const navigate = useNavigate()
   const [showTgWarning, setShowTgWarning] = useState(false)
   const t = {
     uz: {
@@ -70,7 +72,7 @@ function Home({ lang, setLang, setStep }) {
           <span className="text-lg">🏠</span>
           <span className="text-xs">{text.nav.home}</span>
         </button>
-        <button onClick={() => setStep('exercise')} className="flex-1 py-3 flex flex-col items-center gap-1 text-gray-500">
+        <button onClick={() => navigate('/practice')} className="flex-1 py-3 flex flex-col items-center gap-1 text-gray-500">
           <span className="text-lg">✏️</span>
           <span className="text-xs">{text.nav.practice}</span>
         </button>
@@ -82,7 +84,7 @@ function Home({ lang, setLang, setStep }) {
           <span className="text-lg">👑</span>
           <span className="text-xs">{text.nav.plans}</span>
         </button>
-        <button onClick={() => setStep('profile')} className="flex-1 py-3 flex flex-col items-center gap-1 text-gray-500">
+        <button onClick={() => navigate('/profile')} className="flex-1 py-3 flex flex-col items-center gap-1 text-gray-500">
           <span className="text-lg">👤</span>
           <span className="text-xs">{text.nav.profile}</span>
         </button>
@@ -145,7 +147,7 @@ function Home({ lang, setLang, setStep }) {
           {text.topicsList.map((topic, i) => (
             <button
               key={i}
-              onClick={() => !topic.done && setStep('exercise')}
+              onClick={() => !topic.done && navigate('/practice')}
               className="bg-white border border-gray-200 rounded-2xl px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition text-left"
             >
               <div className="flex items-center gap-3">
