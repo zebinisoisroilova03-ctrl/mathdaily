@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../supabaseClient'
 const exercises = [
   { question: '−(−3) − (−3)', answer: 6, options: [7, 5, 6, 8] },
   { question: '−(−3) − (−2)', answer: 5, options: [5, 7, 4, 6] },
@@ -107,10 +108,35 @@ function Exercise({ lang }) {
 
   const ex = exercises[current]
 
-  function handleAnswer(option) {
+  async function handleAnswer(option) {
     if (answered) return
     setSelected(option)
     setAnswered(true)
+
+    const isRight = option === ex.answer
+
+    // Foydalanuvchини olamиз
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Hozirgi natijани olamиз
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('total_solved, total_correct')
+      .eq('id', user.id)
+      .single()
+
+    if (profile) {
+      // Yangилаймиз: har javobда solved +1, to'g'ri bo'lса correct +1
+      await supabase
+        .from('profiles')
+        .update({
+          total_solved: profile.total_solved + 1,
+          total_correct: profile.total_correct + (isRight ? 1 : 0),
+          last_active: new Date().toISOString().split('T')[0],
+        })
+        .eq('id', user.id)
+    }
   }
 
   function nextQuestion() {

@@ -5,12 +5,29 @@ import { useNavigate } from 'react-router-dom'
 function Profile({ lang, setLang }) {
   const navigate = useNavigate()
   const [userEmail, setUserEmail] = useState('')
+  const [stats, setStats] = useState({ total_solved: 0, total_correct: 0, current_streak: 0 })
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setUserEmail(user.email)
-    })
+    async function loadProfile() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      setUserEmail(user.email)
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('total_solved, total_correct, current_streak')
+        .eq('id', user.id)
+        .single()
+
+      if (profile) setStats(profile)
+    }
+    loadProfile()
   }, [])
+
+  // Aniqlik foizini hisoblash
+  const accuracy = stats.total_solved > 0
+    ? Math.round((stats.total_correct / stats.total_solved) * 100)
+    : 0
   const t = {
     uz: {
       nav: { home: 'Bosh', practice: 'Mashq', topics: 'Mavzular', plans: 'Tariflar', profile: 'Profil' },
@@ -121,15 +138,15 @@ function Profile({ lang, setLang }) {
         <div className="text-xs font-semibold text-gray-500 mb-3 tracking-wide">{text.stats.toUpperCase()}</div>
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="bg-gray-50 rounded-2xl px-3 py-3 text-center">
-            <div className="text-2xl font-bold text-[#1a3a2a]">7</div>
+            <div className="text-2xl font-bold text-[#1a3a2a]">{stats.current_streak}</div>
             <div className="text-xs text-gray-500 mt-1">{text.streak}</div>
           </div>
           <div className="bg-gray-50 rounded-2xl px-3 py-3 text-center">
-            <div className="text-2xl font-bold text-[#1a3a2a]">142</div>
+            <div className="text-2xl font-bold text-[#1a3a2a]">{stats.total_solved}</div>
             <div className="text-xs text-gray-500 mt-1">{text.solved}</div>
           </div>
           <div className="bg-gray-50 rounded-2xl px-3 py-3 text-center">
-            <div className="text-2xl font-bold text-[#1a3a2a]">78%</div>
+            <div className="text-2xl font-bold text-[#1a3a2a]">{accuracy}%</div>
             <div className="text-xs text-gray-500 mt-1">{text.accuracy}</div>
           </div>
         </div>
