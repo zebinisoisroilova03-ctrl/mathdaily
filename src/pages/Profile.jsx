@@ -1,8 +1,16 @@
+import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
 
 function Profile({ lang, setLang }) {
   const navigate = useNavigate()
+  const [userEmail, setUserEmail] = useState('')
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUserEmail(user.email)
+    })
+  }, [])
   const t = {
     uz: {
       nav: { home: 'Bosh', practice: 'Mashq', topics: 'Mavzular', plans: 'Tariflar', profile: 'Profil' },
@@ -98,10 +106,10 @@ function Profile({ lang, setLang }) {
         {/* Foydalanuvchi kartasi */}
         <div className="flex items-center gap-4 mb-6">
           <div className="w-16 h-16 rounded-full bg-[#E1F5EE] flex items-center justify-center text-2xl font-bold text-[#0F6E56]">
-            Z
+            {userEmail ? userEmail[0].toUpperCase() : '?'}
           </div>
-          <div>
-            <div className="text-lg font-bold text-[#1a3a2a]">Zebo</div>
+          <div className="min-w-0">
+            <div className="text-lg font-bold text-[#1a3a2a] truncate">{userEmail || '...'}</div>
             <div className="text-sm text-gray-500">{text.role} · {text.level}</div>
             <div className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-[#E1F5EE] text-[#0F6E56] mt-1">
               👑 {text.premium}
