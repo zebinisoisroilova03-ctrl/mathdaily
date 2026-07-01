@@ -1,9 +1,29 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../supabaseClient'
 
 function Home({ lang }) {
   const navigate = useNavigate()
   const [showTgWarning, setShowTgWarning] = useState(false)
+  const [stats, setStats] = useState({ total_solved: 0, total_correct: 0, current_streak: 0 })
+
+  useEffect(() => {
+    async function loadStats() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('total_solved, total_correct, current_streak')
+        .eq('id', user.id)
+        .single()
+      if (profile) setStats(profile)
+    }
+    loadStats()
+  }, [])
+
+  const accuracy = stats.total_solved > 0
+    ? Math.round((stats.total_correct / stats.total_solved) * 100)
+    : 0
   const t = {
     uz: {
       greeting: 'Xush kelibsiz!',
@@ -95,7 +115,7 @@ function Home({ lang }) {
         {/* Streak karta */}
         <div className="bg-[#1a3a2a] rounded-2xl px-5 py-4 text-white flex items-center justify-between mb-4">
           <div>
-            <div className="text-3xl font-bold">7 🔥</div>
+            <div className="text-3xl font-bold">{stats.current_streak} 🔥</div>
             <div className="text-sm opacity-75">{text.streak}</div>
           </div>
           <div className="text-right">
@@ -109,14 +129,14 @@ function Home({ lang }) {
           <div className="h-2 bg-[#1D9E75] rounded-full" style={{ width: '60%' }}></div>
         </div>
 
-        {/* Statistika */}
+       {/* Statistika */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="bg-gray-50 rounded-2xl px-4 py-3">
-            <div className="text-2xl font-bold text-[#1a3a2a]">142</div>
+            <div className="text-2xl font-bold text-[#1a3a2a]">{stats.total_solved}</div>
             <div className="text-xs text-gray-500">{text.exercisesDone}</div>
           </div>
           <div className="bg-gray-50 rounded-2xl px-4 py-3">
-            <div className="text-2xl font-bold text-[#1a3a2a]">78%</div>
+            <div className="text-2xl font-bold text-[#1a3a2a]">{accuracy}%</div>
             <div className="text-xs text-gray-500">{text.accuracy}</div>
           </div>
         </div>
