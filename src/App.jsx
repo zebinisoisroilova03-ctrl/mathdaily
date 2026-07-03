@@ -65,6 +65,17 @@ function Auth({ lang, setLang }) {
     else navigate('/home')
   }
 
+  // Google bilan kirish
+  async function handleGoogleSignIn() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/home',
+      },
+    })
+    if (error) setAuthError(error.message)
+  }
+
   return (
     <div className="min-h-screen bg-white max-w-md mx-auto relative flex flex-col items-center justify-center px-4">
 
@@ -127,7 +138,7 @@ function Auth({ lang, setLang }) {
           <p className="text-gray-500 text-sm mb-6">
             {lang === 'uz' ? 'Hisobingizga kiring' : lang === 'ru' ? 'Войдите в аккаунт' : 'Sign in to your account'}
           </p>
-          <button className="w-full flex items-center justify-center gap-3 border border-gray-200 bg-white py-3 rounded-2xl mb-3 hover:bg-gray-50 transition font-medium text-gray-700">
+          <button onClick={handleGoogleSignIn} className="w-full flex items-center justify-center gap-3 border border-gray-200 bg-white py-3 rounded-2xl mb-3 hover:bg-gray-50 transition font-medium text-gray-700">
             <img src="https://www.google.com/favicon.ico" className="w-5 h-5" />
             {lang === 'uz' ? 'Google orqali kirish' : lang === 'ru' ? 'Войти через Google' : 'Continue with Google'}
           </button>
