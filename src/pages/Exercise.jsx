@@ -115,28 +115,56 @@ function Exercise({ lang }) {
 
     const isRight = option === ex.answer
 
-    // Foydalanuvchини olamиз
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // Hozirgi natijани olamиз
+    // Hozirgi profilni olamiz
     const { data: profile } = await supabase
       .from('profiles')
-      .select('total_solved, total_correct')
+      .select('total_solved, total_correct, current_streak, last_active, today_solved, today_date')
       .eq('id', user.id)
       .single()
 
-    if (profile) {
-      // Yangилаймиз: har javobда solved +1, to'g'ri bo'lса correct +1
-      await supabase
-        .from('profiles')
-        .update({
-          total_solved: profile.total_solved + 1,
-          total_correct: profile.total_correct + (isRight ? 1 : 0),
-          last_active: new Date().toISOString().split('T')[0],
-        })
-        .eq('id', user.id)
+    if (!profile) return
+
+    // Bugungi sana
+    const today = new Date().toISOString().split('T')[0]
+
+    // Kecha sanasi (hisoblash uchun)
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+
+    // --- STREAK mantiqi ---
+    let newStreak = profile.current_streak
+    if (profile.last_active === today) {
+      // Bugun allaqachon mashq qilgan — streak o'zgarmaydi
+      newStreak = profile.current_streak
+    } else if (profile.last_active === yesterday) {
+      // Kecha qilgan, bugun davom etyapti — streak +1
+      newStreak = profile.current_streak + 1
+    } else {
+      // Uzoq tanaffus yoki birinchi marta — streak 1 dan boshlanadi
+      newStreak = 1
     }
+
+    // --- BUGUNGI PROGRESS mantiqi ---
+    let newTodaySolved = 1
+    if (profile.today_date === today) {
+      // Bugun avval ham yechgan — davom etadi
+      newTodaySolved = profile.today_solved + 1
+    }
+
+    // Bazaga yozamiz
+    await supabase
+      .from('profiles')
+      .update({
+        total_solved: profile.total_solved + 1,
+        total_correct: profile.total_correct + (isRight ? 1 : 0),
+        current_streak: newStreak,
+        last_active: today,
+        today_solved: newTodaySolved,
+        today_date: today,
+      })
+      .eq('id', user.id)
   }
 
   function nextQuestion() {

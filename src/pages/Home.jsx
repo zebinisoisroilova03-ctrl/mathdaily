@@ -13,7 +13,7 @@ function Home({ lang }) {
       if (!user) return
       const { data: profile } = await supabase
         .from('profiles')
-        .select('total_solved, total_correct, current_streak')
+        .select('total_solved, total_correct, current_streak, today_solved')
         .eq('id', user.id)
         .single()
       if (profile) setStats(profile)
@@ -120,13 +120,16 @@ function Home({ lang }) {
           </div>
           <div className="text-right">
             <div className="text-sm opacity-75">{text.todayProgress}</div>
-            <div className="text-xl font-bold">3/5</div>
+            <div className="text-xl font-bold">{Math.min(stats.today_solved || 0, 5)}/5</div>
           </div>
         </div>
 
         {/* Progress bar */}
         <div className="w-full h-2 bg-gray-100 rounded-full mb-4">
-          <div className="h-2 bg-[#1D9E75] rounded-full" style={{ width: '60%' }}></div>
+          <div
+            className="h-2 bg-[#1D9E75] rounded-full transition-all"
+            style={{ width: `${Math.min((stats.today_solved || 0) / 5 * 100, 100)}%` }}
+          ></div>
         </div>
 
        {/* Statistika */}
