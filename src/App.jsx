@@ -4,6 +4,7 @@ import { supabase } from './supabaseClient'
 import Home from './pages/Home'
 import Exercise from './pages/Exercise'
 import Profile from './pages/Profile'
+import Plans from './pages/Plans'
 
 // ============ AUTH (Welcome + Role + Login) ============
 function Auth({ lang, setLang }) {
@@ -204,6 +205,7 @@ function App() {
       <Route path="/home" element={session ? <Home lang={lang} /> : <Auth lang={lang} setLang={setLang} />} />
       <Route path="/practice" element={session ? <Exercise lang={lang} /> : <Auth lang={lang} setLang={setLang} />} />
       <Route path="/profile" element={session ? <Profile lang={lang} setLang={setLang} /> : <Auth lang={lang} setLang={setLang} />} />
+      <Route path="/plans" element={session ? <Plans lang={lang} /> : <Auth lang={lang} setLang={setLang} />} />
     </Routes>
   )
 }
