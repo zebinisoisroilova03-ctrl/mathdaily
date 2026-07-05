@@ -7,19 +7,43 @@ function Home({ lang }) {
   const [showTgWarning, setShowTgWarning] = useState(false)
   const [stats, setStats] = useState({ total_solved: 0, total_correct: 0, current_streak: 0 })
 
-  useEffect(() => {
-    async function loadStats() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('total_solved, total_correct, current_streak, today_solved')
-        .eq('id', user.id)
-        .single()
-      if (profile) setStats(profile)
+ useEffect(() => {
+  async function loadStats() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('total_solved, total_correct, current_streak, today_solved, today_date, last_active')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile) return
+
+    const today = new Date().toISOString().split('T')[0]
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+
+    let todaySolved = profile.today_solved || 0
+    let streak = profile.current_streak || 0
+
+    // Bugun hali mashq qilinmagan bo'lsa — bugungi progress 0 ko'rinadi
+    if (profile.today_date !== today) {
+      todaySolved = 0
     }
-    loadStats()
-  }, [])
+
+    // Oxirgi faollik na bugun, na kecha bo'lsa — ketma-ketlik uzilgan
+    if (profile.last_active !== today && profile.last_active !== yesterday) {
+      streak = 0
+    }
+
+    setStats({
+      ...profile,
+      today_solved: todaySolved,
+      current_streak: streak,
+    })
+  }
+  loadStats()
+}, [])
 
   const accuracy = stats.total_solved > 0
     ? Math.round((stats.total_correct / stats.total_solved) * 100)
