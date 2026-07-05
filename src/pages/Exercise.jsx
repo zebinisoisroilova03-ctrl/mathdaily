@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect  } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 const exercises = [
@@ -64,6 +64,38 @@ function Exercise({ lang }) {
   const [current, setCurrent] = useState(0)
   const [selected, setSelected] = useState(null)
   const [answered, setAnswered] = useState(false)
+  const [limitReached, setLimitReached] = useState(false)
+  const [isPremium, setIsPremium] = useState(false)
+
+  const DAILY_LIMIT_FREE = 5
+  const DAILY_LIMIT_PREMIUM = 50
+
+  // Sahifa ochilganda limitni tekshiramiz
+  useEffect(() => {
+    async function checkLimit() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('today_solved, today_date, is_premium')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile) return
+
+      setIsPremium(profile.is_premium)
+
+      const today = new Date().toISOString().split('T')[0]
+      const limit = profile.is_premium ? DAILY_LIMIT_PREMIUM : DAILY_LIMIT_FREE
+
+      // Agar bugun allaqachon limitga yetgan bo'lsa
+      if (profile.today_date === today && profile.today_solved >= limit) {
+        setLimitReached(true)
+      }
+    }
+    checkLimit()
+  }, [])
 
   const t = {
     uz: {
@@ -77,6 +109,10 @@ function Exercise({ lang }) {
       next: 'Keyingi savol',
       done: 'Barcha savollar tugadi!',
       back: 'Orqaga',
+      limitTitle: 'Bugungi limit tugadi!',
+      limitText: "Bepul tarifda kuniga 5 ta mashq. Cheksiz mashq uchun Premium oling yoki ertaga qayting.",
+      limitPremium: "Premium olish",
+      limitBack: 'Bosh sahifa',
     },
     en: {
       title: 'Order of Operations',
@@ -89,6 +125,10 @@ function Exercise({ lang }) {
       next: 'Next question',
       done: 'All questions completed!',
       back: 'Back',
+      limitTitle: "Daily limit reached!",
+      limitText: 'Free plan includes 5 exercises per day. Get Premium for unlimited practice or come back tomorrow.',
+      limitPremium: 'Get Premium',
+      limitBack: 'Home',
     },
     ru: {
       title: 'Порядок действий',
@@ -101,6 +141,10 @@ function Exercise({ lang }) {
       next: 'Следующий вопрос',
       done: 'Все вопросы завершены!',
       back: 'Назад',
+      limitTitle: 'Дневной лимит исчерпан!',
+      limitText: 'Бесплатный тариф — 5 задач в день. Оформите Premium для безлимита или возвращайтесь завтра.',
+      limitPremium: 'Оформить Premium',
+      limitBack: 'Главная',
     }
   }
 
@@ -121,7 +165,7 @@ function Exercise({ lang }) {
     // Hozirgi profilni olamiz
     const { data: profile } = await supabase
       .from('profiles')
-      .select('total_solved, total_correct, current_streak, last_active, today_solved, today_date')
+      .select('total_solved, total_correct, current_streak, last_active, today_solved, today_date, is_premium')
       .eq('id', user.id)
       .single()
 
@@ -165,6 +209,12 @@ function Exercise({ lang }) {
         today_date: today,
       })
       .eq('id', user.id)
+
+    // Limitga yetdimi tekshiramiz
+    const limit = profile.is_premium ? DAILY_LIMIT_PREMIUM : DAILY_LIMIT_FREE
+    if (newTodaySolved >= limit) {
+      setLimitReached(true)
+    }
   }
 
   function nextQuestion() {
@@ -177,6 +227,31 @@ function Exercise({ lang }) {
 
   const isCorrect = selected === ex.answer
   const isLast = current === exercises.length - 1
+
+ // Limit tugagan bo'lsa — limit oynasini ko'rsatamiz
+  if (limitReached) {
+    return (
+      <div className="min-h-screen bg-white max-w-md mx-auto px-5 py-6 flex flex-col items-center justify-center text-center">
+        <div className="w-20 h-20 bg-[#E1F5EE] rounded-full flex items-center justify-center mb-5">
+          <span className="text-4xl">🎯</span>
+        </div>
+        <h2 className="text-2xl font-bold text-[#1a3a2a] mb-3">{text.limitTitle}</h2>
+        <p className="text-gray-500 text-sm mb-8 max-w-xs">{text.limitText}</p>
+        <button
+          onClick={() => navigate('/plans')}
+          className="w-full max-w-xs bg-[#1a3a2a] text-white py-4 rounded-2xl font-bold text-lg hover:opacity-90 transition mb-3 flex items-center justify-center gap-2"
+        >
+          👑 {text.limitPremium}
+        </button>
+        <button
+          onClick={() => navigate('/home')}
+          className="w-full max-w-xs py-3 rounded-2xl border border-gray-200 text-gray-500 font-medium hover:bg-gray-50 transition"
+        >
+          {text.limitBack}
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-white max-w-md mx-auto px-5 py-6">

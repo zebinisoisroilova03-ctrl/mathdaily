@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
-
+const today = getLocalDate(0)
+const yesterday = getLocalDate(-1)
+ 
 function Home({ lang }) {
   const navigate = useNavigate()
   const [showTgWarning, setShowTgWarning] = useState(false)
