@@ -1,6 +1,11 @@
-import { useState, useEffect  } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
+
+// Bepul tarif uchun kunlik limit (bitta joyda — o'zgartirish oson).
+// Haqiqiy himoya serverdagi record_answer funksiyasida; bu faqat ko'rinish uchun.
+const FREE_LIMIT = 10
+
 const exercises = [
   { question: '−(−3) − (−3)', answer: 6, options: [7, 5, 6, 8] },
   { question: '−(−3) − (−2)', answer: 5, options: [5, 7, 4, 6] },
@@ -64,13 +69,10 @@ function Exercise({ lang }) {
   const [current, setCurrent] = useState(0)
   const [selected, setSelected] = useState(null)
   const [answered, setAnswered] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [limitReached, setLimitReached] = useState(false)
-  const [isPremium, setIsPremium] = useState(false)
 
-  const DAILY_LIMIT_FREE = 5
-  const DAILY_LIMIT_PREMIUM = 50
-
-  // Sahifa ochilganda limitni tekshiramiz
+  // Sahifa ochilganda: bugungi limitga yetilgan bo'lsa darrov ko'rsatamiz
   useEffect(() => {
     async function checkLimit() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -84,13 +86,8 @@ function Exercise({ lang }) {
 
       if (!profile) return
 
-      setIsPremium(profile.is_premium)
-
       const today = new Date().toISOString().split('T')[0]
-      const limit = profile.is_premium ? DAILY_LIMIT_PREMIUM : DAILY_LIMIT_FREE
-
-      // Agar bugun allaqachon limitga yetgan bo'lsa
-      if (profile.today_date === today && profile.today_solved >= limit) {
+      if (!profile.is_premium && profile.today_date === today && profile.today_solved >= FREE_LIMIT) {
         setLimitReached(true)
       }
     }
@@ -99,7 +96,7 @@ function Exercise({ lang }) {
 
   const t = {
     uz: {
-      title: 'Butun sonlarni qo\'shish va ayirish',
+      title: "Butun sonlarni qo'shish va ayirish",
       question: 'savol',
       correct: "To'g'ri!",
       wrong: "Noto'g'ri.",
@@ -110,12 +107,12 @@ function Exercise({ lang }) {
       done: 'Barcha savollar tugadi!',
       back: 'Orqaga',
       limitTitle: 'Bugungi limit tugadi!',
-      limitText: "Bepul tarifda kuniga 5 ta mashq. Cheksiz mashq uchun Premium oling yoki ertaga qayting.",
-      limitPremium: "Premium olish",
+      limitText: `Bepul tarifda kuniga ${FREE_LIMIT} ta mashq. Cheksiz mashq uchun Premium oling yoki ertaga qayting.`,
+      limitPremium: 'Premium olish',
       limitBack: 'Bosh sahifa',
     },
     en: {
-      title: 'Order of Operations',
+      title: 'Adding & Subtracting Integers',
       question: 'question',
       correct: 'Correct!',
       wrong: 'Not quite.',
@@ -125,13 +122,13 @@ function Exercise({ lang }) {
       next: 'Next question',
       done: 'All questions completed!',
       back: 'Back',
-      limitTitle: "Daily limit reached!",
-      limitText: 'Free plan includes 5 exercises per day. Get Premium for unlimited practice or come back tomorrow.',
+      limitTitle: 'Daily limit reached!',
+      limitText: `Free plan includes ${FREE_LIMIT} exercises per day. Get Premium for unlimited practice or come back tomorrow.`,
       limitPremium: 'Get Premium',
       limitBack: 'Home',
     },
     ru: {
-      title: 'Порядок действий',
+      title: 'Сложение и вычитание целых чисел',
       question: 'вопрос',
       correct: 'Правильно!',
       wrong: 'Неверно.',
@@ -142,77 +139,39 @@ function Exercise({ lang }) {
       done: 'Все вопросы завершены!',
       back: 'Назад',
       limitTitle: 'Дневной лимит исчерпан!',
-      limitText: 'Бесплатный тариф — 5 задач в день. Оформите Premium для безлимита или возвращайтесь завтра.',
+      limitText: `Бесплатный тариф — ${FREE_LIMIT} задач в день. Оформите Premium для безлимита или возвращайтесь завтра.`,
       limitPremium: 'Оформить Premium',
       limitBack: 'Главная',
-    }
+    },
   }
 
   const text = t[lang] || t.uz
-
   const ex = exercises[current]
 
   async function handleAnswer(option) {
-    if (answered) return
+    // Ikki marta bosishdan himoya
+    if (answered || submitting) return
+    setSubmitting(true)
     setSelected(option)
     setAnswered(true)
 
     const isRight = option === ex.answer
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    const { data, error } = await supabase.rpc('record_answer', {
+      is_correct: isRight,
+    })
 
-    // Hozirgi profilni olamiz
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('total_solved, total_correct, current_streak, last_active, today_solved, today_date, is_premium')
-      .eq('id', user.id)
-      .single()
+    setSubmitting(false)
 
-    if (!profile) return
-
-    // Bugungi sana
-    const today = new Date().toISOString().split('T')[0]
-
-    // Kecha sanasi (hisoblash uchun)
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
-
-    // --- STREAK mantiqi ---
-    let newStreak = profile.current_streak
-    if (profile.last_active === today) {
-      // Bugun allaqachon mashq qilgan — streak o'zgarmaydi
-      newStreak = profile.current_streak
-    } else if (profile.last_active === yesterday) {
-      // Kecha qilgan, bugun davom etyapti — streak +1
-      newStreak = profile.current_streak + 1
-    } else {
-      // Uzoq tanaffus yoki birinchi marta — streak 1 dan boshlanadi
-      newStreak = 1
+    if (error) {
+      // Xatolik bo'lsa — javobni bekor qilamiz, foydalanuvchi qayta urinsin
+      console.error('record_answer error:', error)
+      setAnswered(false)
+      setSelected(null)
+      return
     }
 
-    // --- BUGUNGI PROGRESS mantiqi ---
-    let newTodaySolved = 1
-    if (profile.today_date === today) {
-      // Bugun avval ham yechgan — davom etadi
-      newTodaySolved = profile.today_solved + 1
-    }
-
-    // Bazaga yozamiz
-    await supabase
-      .from('profiles')
-      .update({
-        total_solved: profile.total_solved + 1,
-        total_correct: profile.total_correct + (isRight ? 1 : 0),
-        current_streak: newStreak,
-        last_active: today,
-        today_solved: newTodaySolved,
-        today_date: today,
-      })
-      .eq('id', user.id)
-
-    // Limitga yetdimi tekshiramiz
-    const limit = profile.is_premium ? DAILY_LIMIT_PREMIUM : DAILY_LIMIT_FREE
-    if (newTodaySolved >= limit) {
+    if (data?.limit_reached) {
       setLimitReached(true)
     }
   }
@@ -228,7 +187,7 @@ function Exercise({ lang }) {
   const isCorrect = selected === ex.answer
   const isLast = current === exercises.length - 1
 
- // Limit tugagan bo'lsa — limit oynasini ko'rsatamiz
+  // Limit tugagan bo'lsa — limit oynasini ko'rsatamiz
   if (limitReached) {
     return (
       <div className="min-h-screen bg-white max-w-md mx-auto px-5 py-6 flex flex-col items-center justify-center text-center">
@@ -297,6 +256,7 @@ function Exercise({ lang }) {
             <button
               key={i}
               onClick={() => handleAnswer(option)}
+              disabled={answered || submitting}
               className={`py-4 rounded-2xl border-2 text-xl font-semibold transition ${style}`}
             >
               {option}
@@ -319,7 +279,7 @@ function Exercise({ lang }) {
           </div>
 
           
-            <a href={VIDEO_LINKS[lang] || VIDEO_LINKS.uz}
+          <a href={VIDEO_LINKS[lang] || VIDEO_LINKS.uz}
             rel="noopener noreferrer"
             target="_blank"
             className="flex items-center gap-3 bg-[#E1F5EE] border border-[#1D9E75] rounded-2xl px-4 py-3 mb-4 hover:bg-[#9FE1CB] transition"
@@ -349,7 +309,6 @@ function Exercise({ lang }) {
           <div className="font-bold text-[#1a3a2a]">{text.done}</div>
         </div>
       )}
-
     </div>
   )
 }

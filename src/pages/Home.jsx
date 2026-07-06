@@ -1,55 +1,63 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
-const today = getLocalDate(0)
-const yesterday = getLocalDate(-1)
- 
+
+// Bepul tarif kunlik limiti — server (record_answer) bilan bir xil bo'lishi shart
+const FREE_LIMIT = 10
+
 function Home({ lang }) {
   const navigate = useNavigate()
   const [showTgWarning, setShowTgWarning] = useState(false)
-  const [stats, setStats] = useState({ total_solved: 0, total_correct: 0, current_streak: 0 })
+  const [stats, setStats] = useState({
+    total_solved: 0,
+    total_correct: 0,
+    current_streak: 0,
+    today_solved: 0,
+  })
 
- useEffect(() => {
-  async function loadStats() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+  useEffect(() => {
+    async function loadStats() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('total_solved, total_correct, current_streak, today_solved, today_date, last_active')
-      .eq('id', user.id)
-      .single()
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('total_solved, total_correct, current_streak, today_solved, today_date, last_active')
+        .eq('id', user.id)
+        .single()
 
-    if (!profile) return
+      if (!profile) return
 
-    const today = new Date().toISOString().split('T')[0]
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+      // Server UTC ishlatadi — Home ham UTC bilan solishtiradi (mos bo'lishi uchun)
+      const today = new Date().toISOString().split('T')[0]
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
 
-    let todaySolved = profile.today_solved || 0
-    let streak = profile.current_streak || 0
+      let todaySolved = profile.today_solved || 0
+      let streak = profile.current_streak || 0
 
-    // Bugun hali mashq qilinmagan bo'lsa — bugungi progress 0 ko'rinadi
-    if (profile.today_date !== today) {
-      todaySolved = 0
+      // Bugun hali mashq qilinmagan bo'lsa — bugungi progress 0 ko'rinadi
+      if (profile.today_date !== today) {
+        todaySolved = 0
+      }
+
+      // Oxirgi faollik na bugun, na kecha bo'lsa — ketma-ketlik uzilgan
+      if (profile.last_active !== today && profile.last_active !== yesterday) {
+        streak = 0
+      }
+
+      setStats({
+        ...profile,
+        today_solved: todaySolved,
+        current_streak: streak,
+      })
     }
-
-    // Oxirgi faollik na bugun, na kecha bo'lsa — ketma-ketlik uzilgan
-    if (profile.last_active !== today && profile.last_active !== yesterday) {
-      streak = 0
-    }
-
-    setStats({
-      ...profile,
-      today_solved: todaySolved,
-      current_streak: streak,
-    })
-  }
-  loadStats()
-}, [])
+    loadStats()
+  }, [])
 
   const accuracy = stats.total_solved > 0
     ? Math.round((stats.total_correct / stats.total_solved) * 100)
     : 0
+
   const t = {
     uz: {
       greeting: 'Xush kelibsiz!',
@@ -100,9 +108,11 @@ function Home({ lang }) {
         { name: 'Adding & Subtracting Integers', sub: '49 questions', badge: 'New', done: false },
         { name: 'Linear Equations', sub: 'Coming soon', badge: 'Soon', done: true },
       ],
-    }
+    },
   }
   const text = t[lang] || t.uz
+
+  const todaySolved = Math.min(stats.today_solved || 0, FREE_LIMIT)
 
   return (
     <div className="min-h-screen bg-white max-w-md mx-auto pb-10">
@@ -146,7 +156,7 @@ function Home({ lang }) {
           </div>
           <div className="text-right">
             <div className="text-sm opacity-75">{text.todayProgress}</div>
-            <div className="text-xl font-bold">{Math.min(stats.today_solved || 0, 5)}/5</div>
+            <div className="text-xl font-bold">{todaySolved}/{FREE_LIMIT}</div>
           </div>
         </div>
 
@@ -154,11 +164,11 @@ function Home({ lang }) {
         <div className="w-full h-2 bg-gray-100 rounded-full mb-4">
           <div
             className="h-2 bg-[#1D9E75] rounded-full transition-all"
-            style={{ width: `${Math.min((stats.today_solved || 0) / 5 * 100, 100)}%` }}
+            style={{ width: `${Math.min((todaySolved / FREE_LIMIT) * 100, 100)}%` }}
           ></div>
         </div>
 
-       {/* Statistika */}
+        {/* Statistika */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="bg-gray-50 rounded-2xl px-4 py-3">
             <div className="text-2xl font-bold text-[#1a3a2a]">{stats.total_solved}</div>
@@ -171,7 +181,6 @@ function Home({ lang }) {
         </div>
 
         {/* Telegram banner */}
-        
         <button
           onClick={() => {
             if (lang === 'uz') {
