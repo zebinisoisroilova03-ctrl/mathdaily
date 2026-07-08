@@ -14,11 +14,12 @@ function Home({ lang }) {
     current_streak: 0,
     today_solved: 0,
   })
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     async function loadStats() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { setLoaded(true); return }
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -26,7 +27,7 @@ function Home({ lang }) {
         .eq('id', user.id)
         .single()
 
-      if (!profile) return
+      if (!profile) { setLoaded(true); return }
 
       // Server UTC ishlatadi — Home ham UTC bilan solishtiradi (mos bo'lishi uchun)
       const today = new Date().toISOString().split('T')[0]
@@ -45,11 +46,16 @@ function Home({ lang }) {
         streak = 0
       }
 
+      // Streak xavf ostidami: kecha faol bo'lgan, bugun hali mashq qilmagan
+      const streakAtRisk = profile.last_active === yesterday && todaySolved === 0
+
       setStats({
         ...profile,
         today_solved: todaySolved,
         current_streak: streak,
+        streakAtRisk,
       })
+      setLoaded(true)
     }
     loadStats()
   }, [])
@@ -68,6 +74,14 @@ function Home({ lang }) {
       accuracy: "To'g'rilik darajasi",
       tgChannel: 'Bizning Telegram kanalimiz',
       continueLearning: 'DAVOM ETING',
+      // Eslatma bannerlari
+      reminderRiskTitle: 'Ketma-ketligingiz xavf ostida!',
+      reminderRiskText: (n) => `Bugun mashq qilib, ${n} kunlik seriyangizni saqlang 🔥`,
+      reminderStartTitle: 'Bugungi mashqni boshlang!',
+      reminderStartText: `Kuniga ${FREE_LIMIT} ta masala — bugun 0 tadan boshladingiz`,
+      reminderGoTitle: 'Zo\'r ketyapsiz!',
+      reminderGoText: (x) => `Bugun ${x}/${FREE_LIMIT} — davom eting!`,
+      reminderCta: 'Boshlash →',
       topicsList: [
         { name: "Butun sonlarni qo'shish va ayirish", sub: '49 ta savol', badge: 'Yangi', done: false },
         { name: 'Chiziqli tenglamalar', sub: 'Tez orada', badge: 'Tez orada', done: true },
@@ -86,6 +100,13 @@ function Home({ lang }) {
       tgWarningText: 'Эта платформа создана для Узбекистана. Все видеоуроки в нашем Telegram канале только на узбекском языке. Продолжить?',
       tgCancel: 'Отмена',
       tgContinue: 'Продолжить',
+      reminderRiskTitle: 'Ваша серия под угрозой!',
+      reminderRiskText: (n) => `Позанимайтесь сегодня и сохраните серию из ${n} дней 🔥`,
+      reminderStartTitle: 'Начните сегодняшнюю тренировку!',
+      reminderStartText: `${FREE_LIMIT} задач в день — вы ещё не начинали`,
+      reminderGoTitle: 'Отличный темп!',
+      reminderGoText: (x) => `Сегодня ${x}/${FREE_LIMIT} — продолжайте!`,
+      reminderCta: 'Начать →',
       topicsList: [
         { name: 'Сложение и вычитание целых чисел', sub: '49 вопросов', badge: 'Новое', done: false },
         { name: 'Линейные уравнения', sub: 'Скоро', badge: 'Скоро', done: true },
@@ -104,6 +125,13 @@ function Home({ lang }) {
       tgWarningText: 'This platform is made for Uzbekistan. All video lessons in our Telegram channel are only in Uzbek. Continue?',
       tgCancel: 'Cancel',
       tgContinue: 'Continue',
+      reminderRiskTitle: 'Your streak is at risk!',
+      reminderRiskText: (n) => `Practice today to keep your ${n}-day streak 🔥`,
+      reminderStartTitle: "Start today's practice!",
+      reminderStartText: `${FREE_LIMIT} problems a day — you haven't started yet`,
+      reminderGoTitle: 'Great pace!',
+      reminderGoText: (x) => `Today ${x}/${FREE_LIMIT} — keep going!`,
+      reminderCta: 'Start →',
       topicsList: [
         { name: 'Adding & Subtracting Integers', sub: '49 questions', badge: 'New', done: false },
         { name: 'Linear Equations', sub: 'Coming soon', badge: 'Soon', done: true },
@@ -113,6 +141,20 @@ function Home({ lang }) {
   const text = t[lang] || t.uz
 
   const todaySolved = Math.min(stats.today_solved || 0, FREE_LIMIT)
+
+  // Qaysi banner ko'rsatilsin: 'risk' | 'start' | 'go' | null
+  let reminderType = null
+  if (loaded) {
+    if (todaySolved >= FREE_LIMIT) {
+      reminderType = null // limit to'ldi — bezovta qilmaymiz
+    } else if (stats.streakAtRisk) {
+      reminderType = 'risk'
+    } else if (todaySolved === 0) {
+      reminderType = 'start'
+    } else {
+      reminderType = 'go'
+    }
+  }
 
   return (
     <div className="min-h-screen bg-white max-w-md mx-auto pb-10">
@@ -147,6 +189,49 @@ function Home({ lang }) {
       </div>
 
       <div className="px-6 mt-5">
+
+        {/* Eslatma banneri */}
+        {reminderType === 'risk' && (
+          <button
+            onClick={() => navigate('/practice')}
+            className="w-full flex items-center gap-3 bg-amber-50 border border-amber-300 rounded-2xl px-4 py-3 mb-4 hover:bg-amber-100 transition text-left"
+          >
+            <span className="text-2xl">🔥</span>
+            <div className="flex-1">
+              <div className="text-sm font-bold text-amber-800">{text.reminderRiskTitle}</div>
+              <div className="text-xs text-amber-700">{text.reminderRiskText(stats.current_streak)}</div>
+            </div>
+            <span className="text-amber-700 text-sm font-medium whitespace-nowrap">{text.reminderCta}</span>
+          </button>
+        )}
+
+        {reminderType === 'start' && (
+          <button
+            onClick={() => navigate('/practice')}
+            className="w-full flex items-center gap-3 bg-[#E1F5EE] border border-[#1D9E75] rounded-2xl px-4 py-3 mb-4 hover:bg-[#9FE1CB] transition text-left"
+          >
+            <span className="text-2xl">✏️</span>
+            <div className="flex-1">
+              <div className="text-sm font-bold text-[#0F6E56]">{text.reminderStartTitle}</div>
+              <div className="text-xs text-[#0F6E56] opacity-80">{text.reminderStartText}</div>
+            </div>
+            <span className="text-[#0F6E56] text-sm font-medium whitespace-nowrap">{text.reminderCta}</span>
+          </button>
+        )}
+
+        {reminderType === 'go' && (
+          <button
+            onClick={() => navigate('/practice')}
+            className="w-full flex items-center gap-3 bg-[#E1F5EE] border border-[#1D9E75] rounded-2xl px-4 py-3 mb-4 hover:bg-[#9FE1CB] transition text-left"
+          >
+            <span className="text-2xl">💪</span>
+            <div className="flex-1">
+              <div className="text-sm font-bold text-[#0F6E56]">{text.reminderGoTitle}</div>
+              <div className="text-xs text-[#0F6E56] opacity-80">{text.reminderGoText(todaySolved)}</div>
+            </div>
+            <span className="text-[#0F6E56] text-sm font-medium whitespace-nowrap">{text.reminderCta}</span>
+          </button>
+        )}
 
         {/* Streak karta */}
         <div className="bg-[#1a3a2a] rounded-2xl px-5 py-4 text-white flex items-center justify-between mb-4">
