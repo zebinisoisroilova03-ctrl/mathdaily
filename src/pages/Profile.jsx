@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
 
 const FREE_LIMIT = 10
+const TELEGRAM_BOT = 'mathdaily_reminder_bot'
 
 function Profile({ lang, setLang }) {
   const navigate = useNavigate()
+  const [userId, setUserId] = useState('')
   const [userEmail, setUserEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
@@ -13,30 +15,34 @@ function Profile({ lang, setLang }) {
   const [stats, setStats] = useState({ total_solved: 0, total_correct: 0, current_streak: 0 })
   const [loading, setLoading] = useState(true)
 
+  // Telegram eslatma holati
+  const [reminderEnabled, setReminderEnabled] = useState(false)
+  const [togglingReminder, setTogglingReminder] = useState(false)
+
   // Ism tahrirlash holati
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState('')
   const [saving, setSaving] = useState(false)
+  const pollIntervalRef = useRef(null)
 
   useEffect(() => {
     async function loadProfile() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
+        setUserId(user.id)
         setUserEmail(user.email)
 
-        // Google avatar (agar Google bilan kirgan bo'lsa)
         const googleAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture || ''
         setAvatarUrl(googleAvatar)
 
         const { data: profile } = await supabase
           .from('profiles')
-          .select('total_solved, total_correct, current_streak, full_name, is_premium, today_date, last_active')
+          .select('total_solved, total_correct, current_streak, full_name, is_premium, today_date, last_active, reminder_enabled, telegram_chat_id')
           .eq('id', user.id)
           .single()
 
         if (profile) {
-          // Home bilan bir xil: ketma-ketlik uzilgan bo'lsa 0 ko'rsatamiz
           const today = new Date().toISOString().split('T')[0]
           const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
 
@@ -47,6 +53,7 @@ function Profile({ lang, setLang }) {
 
           setStats({ ...profile, current_streak: streak })
           setIsPremium(!!profile.is_premium)
+          setReminderEnabled(!!profile.reminder_enabled && !!profile.telegram_chat_id)
           const name = profile.full_name || user.user_metadata?.full_name || user.user_metadata?.name || ''
           setFullName(name)
           setNameInput(name)
@@ -80,6 +87,68 @@ function Profile({ lang, setLang }) {
     setEditingName(false)
   }
 
+// Komponent yopilganda pollingni to'xtatamiz
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current)
+      }
+    }
+  }, [])
+
+  // Telegram botni ulash — maxsus havola bilan ochamiz
+  function connectTelegram() {
+    if (!userId) return
+    window.open(`https://t.me/${TELEGRAM_BOT}?start=${userId}`, '_blank')
+    startPollingForConnection()
+  }
+
+  // Ulanishni kutamiz: har 3 soniyada tekshiramiz (2 daqiqagacha)
+  function startPollingForConnection() {
+    // Avvalgi polling bo'lsa — to'xtatamiz
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+
+    let attempts = 0
+    const maxAttempts = 40 // 40 x 3s = 2 daqiqa
+
+    pollIntervalRef.current = setInterval(async () => {
+      attempts++
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('telegram_chat_id, reminder_enabled')
+        .eq('id', userId)
+        .single()
+
+      if (profile?.telegram_chat_id && profile?.reminder_enabled) {
+        setReminderEnabled(true)
+        clearInterval(pollIntervalRef.current)
+        pollIntervalRef.current = null
+        return
+      }
+
+      if (attempts >= maxAttempts) {
+        clearInterval(pollIntervalRef.current)
+        pollIntervalRef.current = null
+      }
+    }, 3000)
+  }
+
+  // Eslatmani o'chirish
+  async function disableReminder() {
+    setTogglingReminder(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ reminder_enabled: false })
+      .eq('id', userId)
+    setTogglingReminder(false)
+    if (error) {
+      console.error('reminder disable error:', error)
+      return
+    }
+    setReminderEnabled(false)
+  }
+
   const accuracy = stats.total_solved > 0
     ? Math.round((stats.total_correct / stats.total_solved) * 100)
     : 0
@@ -98,13 +167,17 @@ function Profile({ lang, setLang }) {
       language: 'Til',
       dailyGoal: 'Kunlik maqsad',
       goalValue: isPremium ? 'Cheksiz' : `${FREE_LIMIT} ta masala`,
-      notifications: 'Bildirishnomalar',
       account: 'Hisob',
       logout: 'Chiqish',
       editName: 'Ismni tahrirlash',
       namePlaceholder: 'Ismingizni kiriting',
       save: 'Saqlash',
       cancel: 'Bekor qilish',
+      tgReminder: 'Telegram eslatma',
+      tgReminderOff: 'Har kuni eslatib turamiz',
+      tgReminderOn: 'Ulangan',
+      tgConnect: 'Ulash',
+      tgDisable: "O'chirish",
     },
     ru: {
       nav: { home: 'Главная', practice: 'Практика', topics: 'Темы', plans: 'Тарифы', profile: 'Профиль' },
@@ -119,13 +192,17 @@ function Profile({ lang, setLang }) {
       language: 'Язык',
       dailyGoal: 'Цель на день',
       goalValue: isPremium ? 'Безлимит' : `${FREE_LIMIT} задач`,
-      notifications: 'Уведомления',
       account: 'Аккаунт',
       logout: 'Выйти',
       editName: 'Изменить имя',
       namePlaceholder: 'Введите имя',
       save: 'Сохранить',
       cancel: 'Отмена',
+      tgReminder: 'Telegram напоминания',
+      tgReminderOff: 'Будем напоминать каждый день',
+      tgReminderOn: 'Подключено',
+      tgConnect: 'Подключить',
+      tgDisable: 'Отключить',
     },
     en: {
       nav: { home: 'Home', practice: 'Practice', topics: 'Topics', plans: 'Plans', profile: 'Profile' },
@@ -140,18 +217,21 @@ function Profile({ lang, setLang }) {
       language: 'Language',
       dailyGoal: 'Daily goal',
       goalValue: isPremium ? 'Unlimited' : `${FREE_LIMIT} problems`,
-      notifications: 'Notifications',
       account: 'Account',
       logout: 'Log out',
       editName: 'Edit name',
       namePlaceholder: 'Enter your name',
       save: 'Save',
       cancel: 'Cancel',
+      tgReminder: 'Telegram reminders',
+      tgReminderOff: "We'll remind you every day",
+      tgReminderOn: 'Connected',
+      tgConnect: 'Connect',
+      tgDisable: 'Disable',
     },
   }
   const text = t[lang] || t.uz
 
-  // Avatarda ko'rsatiladigan harf
   const displayName = fullName || userEmail
   const initial = displayName ? displayName[0].toUpperCase() : '?'
 
@@ -323,13 +403,34 @@ function Profile({ lang, setLang }) {
           <span className="text-sm text-[#0F6E56] font-medium">{text.goalValue}</span>
         </div>
 
-        {/* Bildirishnomalar */}
-        <div className="bg-gray-50 rounded-2xl px-4 py-3 mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        {/* Telegram eslatma */}
+        <div className="bg-gray-50 rounded-2xl px-4 py-3 mb-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
             <span className="text-lg">🔔</span>
-            <span className="font-medium text-gray-800">{text.notifications}</span>
+            <div className="min-w-0">
+              <div className="font-medium text-gray-800">{text.tgReminder}</div>
+              <div className="text-xs text-gray-500 truncate">
+                {reminderEnabled ? `✓ ${text.tgReminderOn}` : text.tgReminderOff}
+              </div>
+            </div>
           </div>
-          <span className="text-sm text-gray-400">9:00</span>
+          {reminderEnabled ? (
+            <button
+              onClick={disableReminder}
+              disabled={togglingReminder}
+              className="text-sm text-gray-500 border border-gray-200 px-3 py-1.5 rounded-xl hover:bg-white transition disabled:opacity-50 whitespace-nowrap"
+            >
+              {text.tgDisable}
+            </button>
+          ) : (
+            <button
+              onClick={connectTelegram}
+              disabled={loading || !userId}
+              className="text-sm bg-[#1a3a2a] text-white px-4 py-1.5 rounded-xl font-medium hover:opacity-90 transition disabled:opacity-50 whitespace-nowrap"
+            >
+              {text.tgConnect}
+            </button>
+          )}
         </div>
 
         {/* Hisob */}

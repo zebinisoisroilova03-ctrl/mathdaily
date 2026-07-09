@@ -23,7 +23,7 @@ function Home({ lang }) {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('total_solved, total_correct, current_streak, today_solved, today_date, last_active')
+        .select('total_solved, total_correct, current_streak, today_solved, today_date, last_active, timezone')
         .eq('id', user.id)
         .single()
 
@@ -48,6 +48,15 @@ function Home({ lang }) {
 
       // Streak xavf ostidami: kecha faol bo'lgan, bugun hali mashq qilmagan
       const streakAtRisk = profile.last_active === yesterday && todaySolved === 0
+
+      // Timezone'ni saqlaymiz (o'zgargan bo'lsa yoki hali yo'q bo'lsa)
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      if (tz && profile.timezone !== tz) {
+        await supabase
+          .from('profiles')
+          .update({ timezone: tz })
+          .eq('id', user.id)
+      }
 
       setStats({
         ...profile,

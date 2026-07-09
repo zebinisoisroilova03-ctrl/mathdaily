@@ -46,7 +46,7 @@ function Auth({ lang, setLang }) {
       next: 'Продолжить',
     }
   }
-  const t = text[lang]
+const t = text[lang] || text.uz
 
   async function handleSignUp() {
     setAuthError('')
@@ -176,10 +176,25 @@ function App() {
   const [loadingSession, setLoadingSession] = useState(true)
   const navigate = useNavigate()
 
+  // Tilni localStorage'ga saqlaymiz
   useEffect(() => {
     localStorage.setItem('lang', lang)
   }, [lang])
 
+  // Tilni bazaga ham saqlaymiz (foydalanuvchi kirgan bo'lsa)
+  useEffect(() => {
+    async function saveLang() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase
+        .from('profiles')
+        .update({ lang })
+        .eq('id', user.id)
+    }
+    saveLang()
+  }, [lang])
+
+  // Sessiyani kuzatamiz
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
@@ -194,7 +209,7 @@ function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Sessiya tekshirilayotganda — bo'sh ekran (miltillashни oldini oladi)
+  // Sessiya tekshirilayotganda — bo'sh ekran (miltillashning oldini oladi)
   if (loadingSession) {
     return <div className="min-h-screen bg-white"></div>
   }
