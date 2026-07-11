@@ -183,7 +183,7 @@ function Home({ lang }) {
           <span className="text-lg">✏️</span>
           <span className="text-xs">{text.nav.practice}</span>
         </button>
-        <button className="flex-1 py-3 flex flex-col items-center gap-1 text-gray-500">
+        <button onClick={() => navigate('/topics')} className="flex-1 py-3 flex flex-col items-center gap-1 text-gray-500">
           <span className="text-lg">📚</span>
           <span className="text-xs">{text.nav.topics}</span>
         </button>

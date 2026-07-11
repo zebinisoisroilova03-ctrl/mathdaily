@@ -5,6 +5,9 @@ import Home from './pages/Home'
 import Exercise from './pages/Exercise'
 import Profile from './pages/Profile'
 import Plans from './pages/Plans'
+import Language from './pages/Language'
+import Statistics from './pages/Statistics'
+import Topics from './pages/Topics'
 
 // ============ AUTH (Welcome + Role + Login) ============
 function Auth({ lang, setLang }) {
@@ -221,6 +224,9 @@ function App() {
       <Route path="/practice" element={session ? <Exercise lang={lang} /> : <Auth lang={lang} setLang={setLang} />} />
       <Route path="/profile" element={session ? <Profile lang={lang} setLang={setLang} /> : <Auth lang={lang} setLang={setLang} />} />
       <Route path="/plans" element={session ? <Plans lang={lang} /> : <Auth lang={lang} setLang={setLang} />} />
+      <Route path="/language" element={session ? <Language lang={lang} setLang={setLang} /> : <Auth lang={lang} setLang={setLang} />} />
+      <Route path="/statistics" element={session ? <Statistics lang={lang} /> : <Auth lang={lang} setLang={setLang} />} />
+      <Route path="/topics" element={session ? <Topics lang={lang} /> : <Auth lang={lang} setLang={setLang} />} />
     </Routes>
   )
 }
