@@ -69,9 +69,9 @@ function Home({ lang }) {
     loadStats()
   }, [])
 
-  const accuracy = stats.total_solved > 0
-    ? Math.round((stats.total_correct / stats.total_solved) * 100)
-    : 0
+const accuracy = stats.total_solved > 0
+  ? Math.min(Math.round((stats.total_correct / stats.total_solved) * 100), 100)
+  : 0
 
   const t = {
     uz: {
@@ -83,7 +83,6 @@ function Home({ lang }) {
       accuracy: "To'g'rilik darajasi",
       tgChannel: 'Bizning Telegram kanalimiz',
       continueLearning: 'DAVOM ETING',
-      // Eslatma bannerlari
       reminderRiskTitle: 'Ketma-ketligingiz xavf ostida!',
       reminderRiskText: (n) => `Bugun mashq qilib, ${n} kunlik seriyangizni saqlang 🔥`,
       reminderStartTitle: 'Bugungi mashqni boshlang!',
@@ -155,7 +154,7 @@ function Home({ lang }) {
   let reminderType = null
   if (loaded) {
     if (todaySolved >= FREE_LIMIT) {
-      reminderType = null // limit to'ldi — bezovta qilmaymiz
+      reminderType = null
     } else if (stats.streakAtRisk) {
       reminderType = 'risk'
     } else if (todaySolved === 0) {
@@ -293,13 +292,13 @@ function Home({ lang }) {
           <span className="text-[#0F6E56]">→</span>
         </button>
 
-        {/* Continue learning */}
+        {/* Continue learning — bo'lim o'rganish (topic rejimi) */}
         <div className="text-xs font-semibold text-gray-500 mb-3 tracking-wide">{text.continueLearning}</div>
         <div className="flex flex-col gap-3">
           {text.topicsList.map((topic, i) => (
             <button
               key={i}
-              onClick={() => !topic.done && navigate('/practice')}
+              onClick={() => !topic.done && navigate('/topic')}
               className="bg-white border border-gray-200 rounded-2xl px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition text-left"
             >
               <div className="flex items-center gap-3">

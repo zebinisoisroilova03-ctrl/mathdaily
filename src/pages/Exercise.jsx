@@ -91,7 +91,7 @@ const exercises = [
   { question: '−3 − 3', answer: -6, options: [-6, -7, -5, -4], type: 6 },
 ]
 
-function Exercise({ lang }) {
+function Exercise({ lang, mode = 'practice' }) {
   const navigate = useNavigate()
   const [currentType, setCurrentType] = useState(1)
   const [ex, setEx] = useState(null)
@@ -105,11 +105,29 @@ function Exercise({ lang }) {
   const [consecutiveCorrect, setConsecutiveCorrect] = useState(0)
   const [seenInType, setSeenInType] = useState([])
 
+  // Masala tanlash: Practice — o'tilgan turlar aralash, Topics — faqat joriy tur
   function pickQuestion(type, seen) {
-    const pool = exercises.filter((e) => e.type === type)
+    let pool
+    if (mode === 'practice') {
+      pool = exercises.filter((e) => e.type <= type)
+    } else {
+      pool = exercises.filter((e) => e.type === type)
+    }
     const unseen = pool.filter((e) => !seen.includes(e.question))
     const source = unseen.length > 0 ? unseen : pool
     return source[Math.floor(Math.random() * source.length)]
+  }
+
+  // Turdan o'tishni hisoblaymiz (faqat Topics uchun)
+  function computeNextType(newConsecutive, newSeen) {
+    const poolSize = exercises.filter((e) => e.type === currentType).length
+    const advanceByStreak = newConsecutive >= STREAK_TO_ADVANCE
+    const advanceBySeen = newSeen.length >= poolSize
+    if (advanceByStreak || advanceBySeen) {
+      if (currentType >= MAX_TYPE) return 'completed'
+      return currentType + 1
+    }
+    return currentType
   }
 
   useEffect(() => {
@@ -146,7 +164,8 @@ function Exercise({ lang }) {
       correct: "To'g'ri!", wrong: "Noto'g'ri.", explanation: "To'g'ri javob:",
       watchVideo: "Video darsni ko'rish",
       videoSub: 'Video dars',
-      next: 'Keyingi savol', back: 'Orqaga', typeLabel: 'daraja',
+      next: 'Keyingi savol', back: 'Orqaga',
+      typeLabel: 'daraja', practiceLabel: 'Mashq',
       limitTitle: 'Bugungi limit tugadi!',
       limitText: `Bepul tarifda kuniga ${FREE_LIMIT} ta mashq. Cheksiz mashq uchun Premium oling yoki ertaga qayting.`,
       limitPremium: 'Premium olish', limitBack: 'Bosh sahifa',
@@ -161,7 +180,8 @@ function Exercise({ lang }) {
       correct: 'Correct!', wrong: 'Not quite.', explanation: 'Correct answer:',
       watchVideo: 'Watch video lesson',
       videoSub: 'Video lesson',
-      next: 'Next question', back: 'Back', typeLabel: 'level',
+      next: 'Next question', back: 'Back',
+      typeLabel: 'level', practiceLabel: 'Practice',
       limitTitle: 'Daily limit reached!',
       limitText: `Free plan includes ${FREE_LIMIT} exercises per day. Get Premium for unlimited practice or come back tomorrow.`,
       limitPremium: 'Get Premium', limitBack: 'Home',
@@ -176,7 +196,8 @@ function Exercise({ lang }) {
       correct: 'Правильно!', wrong: 'Неверно.', explanation: 'Правильный ответ:',
       watchVideo: 'Смотреть видеоурок',
       videoSub: 'Видеоурок',
-      next: 'Следующий вопрос', back: 'Назад', typeLabel: 'уровень',
+      next: 'Следующий вопрос', back: 'Назад',
+      typeLabel: 'уровень', practiceLabel: 'Практика',
       limitTitle: 'Дневной лимит исчерпан!',
       limitText: `Бесплатный тариф — ${FREE_LIMIT} задач в день. Оформите Premium для безлимита или возвращайтесь завтра.`,
       limitPremium: 'Оформить Premium', limitBack: 'Главная',
@@ -189,17 +210,6 @@ function Exercise({ lang }) {
   }
   const text = t[lang] || t.uz
 
-  function computeNextType(newConsecutive, newSeen) {
-    const poolSize = exercises.filter((e) => e.type === currentType).length
-    const advanceByStreak = newConsecutive >= STREAK_TO_ADVANCE
-    const advanceBySeen = newSeen.length >= poolSize
-    if (advanceByStreak || advanceBySeen) {
-      if (currentType >= MAX_TYPE) return 'completed'
-      return currentType + 1
-    }
-    return currentType
-  }
-
   async function handleAnswer(option) {
     if (answered || submitting || !ex) return
     setSubmitting(true)
@@ -211,12 +221,18 @@ function Exercise({ lang }) {
     const newConsecutive = isRight ? consecutiveCorrect + 1 : 0
     const newSeen = seenInType.includes(ex.question) ? seenInType : [...seenInType, ex.question]
 
-    const result = computeNextType(newConsecutive, newSeen)
-    const nextType = result === 'completed' ? currentType : result
+    // Topics: turni hisoblaymiz. Practice: progressga tegmaymiz (null).
+    let result = currentType
+    let nextTypeForServer = null
+
+    if (mode === 'topic') {
+      result = computeNextType(newConsecutive, newSeen)
+      nextTypeForServer = result === 'completed' ? currentType : result
+    }
 
     const { data, error } = await supabase.rpc('record_answer', {
       is_correct: isRight,
-      new_type: nextType,
+      new_type: nextTypeForServer,
     })
 
     setSubmitting(false)
@@ -235,12 +251,15 @@ function Exercise({ lang }) {
     setConsecutiveCorrect(newConsecutive)
     setSeenInType(newSeen)
 
-    if (result === 'completed') {
-      setCompleted('pending')
-    } else if (result !== currentType) {
-      setCurrentType(result)
-      setConsecutiveCorrect(0)
-      setSeenInType([])
+    // Faqat Topics rejimida turdan turga o'tish / tabrik
+    if (mode === 'topic') {
+      if (result === 'completed') {
+        setCompleted('pending')
+      } else if (result !== currentType) {
+        setCurrentType(result)
+        setConsecutiveCorrect(0)
+        setSeenInType([])
+      }
     }
   }
 
@@ -306,13 +325,21 @@ function Exercise({ lang }) {
       <button onClick={() => navigate('/home')} className="text-gray-400 mb-4 flex items-center gap-1 hover:text-gray-600">← {text.back}</button>
 
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm text-gray-500">{text.typeLabel} {currentType}/{MAX_TYPE}</span>
+        {mode === 'topic' ? (
+          <span className="text-sm text-gray-500">{text.typeLabel} {currentType}/{MAX_TYPE}</span>
+        ) : (
+          <span className="text-sm text-gray-500">{text.practiceLabel}</span>
+        )}
         <span className="text-sm font-medium text-[#1a3a2a]">{text.title}</span>
       </div>
 
-      <div className="w-full h-2 bg-gray-100 rounded-full mb-6">
-        <div className="h-2 bg-[#1D9E75] rounded-full transition-all" style={{ width: `${(currentType / MAX_TYPE) * 100}%` }}></div>
-      </div>
+      {mode === 'topic' ? (
+        <div className="w-full h-2 bg-gray-100 rounded-full mb-6">
+          <div className="h-2 bg-[#1D9E75] rounded-full transition-all" style={{ width: `${(currentType / MAX_TYPE) * 100}%` }}></div>
+        </div>
+      ) : (
+        <div className="mb-6"></div>
+      )}
 
       <div className="bg-[#1a3a2a] rounded-3xl px-6 py-10 text-center mb-6">
         <div className="text-4xl font-bold text-white tracking-wide">{ex.question} = ?</div>

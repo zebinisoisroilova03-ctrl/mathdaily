@@ -36,9 +36,9 @@ function Statistics({ lang }) {
     loadStats()
   }, [])
 
-  const accuracy = stats.total_solved > 0
-    ? Math.round((stats.total_correct / stats.total_solved) * 100)
-    : 0
+const accuracy = stats.total_solved > 0
+  ? Math.min(Math.round((stats.total_correct / stats.total_solved) * 100), 100)
+  : 0
   const wrong = stats.total_solved - stats.total_correct
 
   const t = {

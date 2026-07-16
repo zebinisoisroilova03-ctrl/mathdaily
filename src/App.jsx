@@ -218,10 +218,11 @@ function App() {
   }
 
   return (
-    <Routes>
+<Routes>
       <Route path="/" element={<Auth lang={lang} setLang={setLang} />} />
       <Route path="/home" element={session ? <Home lang={lang} /> : <Auth lang={lang} setLang={setLang} />} />
-      <Route path="/practice" element={session ? <Exercise lang={lang} /> : <Auth lang={lang} setLang={setLang} />} />
+      <Route path="/practice" element={session ? <Exercise lang={lang} mode="practice" /> : <Auth lang={lang} setLang={setLang} />} />
+      <Route path="/topic" element={session ? <Exercise lang={lang} mode="topic" /> : <Auth lang={lang} setLang={setLang} />} />
       <Route path="/profile" element={session ? <Profile lang={lang} setLang={setLang} /> : <Auth lang={lang} setLang={setLang} />} />
       <Route path="/plans" element={session ? <Plans lang={lang} /> : <Auth lang={lang} setLang={setLang} />} />
       <Route path="/language" element={session ? <Language lang={lang} setLang={setLang} /> : <Auth lang={lang} setLang={setLang} />} />

@@ -116,12 +116,12 @@ function Topics({ lang }) {
           ))}
         </div>
 
-        {/* Mavzular */}
+        {/* Mavzular — bo'lim o'rganish (topic rejimi) */}
         <div className="flex flex-col gap-3">
           {filtered.map((tp) => (
             <button
               key={tp.id}
-              onClick={() => tp.available && navigate('/practice')}
+              onClick={() => tp.available && navigate('/topic')}
               disabled={!tp.available}
               className={`w-full flex items-center gap-3 rounded-2xl px-4 py-4 border text-left transition ${
                 tp.available
