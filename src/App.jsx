@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Routes, Route, useNavigate } from 'react-router-dom'
+import { Routes, Route, useNavigate, Link } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import Home from './pages/Home'
 import Exercise from './pages/Exercise'
@@ -8,6 +8,8 @@ import Plans from './pages/Plans'
 import Language from './pages/Language'
 import Statistics from './pages/Statistics'
 import Topics from './pages/Topics'
+import Privacy from './pages/Privacy'
+import Terms from './pages/Terms'
 
 // ============ AUTH (Welcome + Role + Login) ============
 function Auth({ lang, setLang }) {
@@ -29,6 +31,11 @@ function Auth({ lang, setLang }) {
       teen: '🧑 Talaba', teenSub: '16-25 yosh',
       parent: '👨‍👩‍👧 Ota-ona', parentSub: 'Farzandimni kuzataman',
       next: 'Davom etish',
+      agreeText: 'Davom etish orqali siz',
+      privacy: 'Maxfiylik siyosati',
+      and: 'va',
+      terms: 'Foydalanish shartlari',
+      agreeEnd: 'ga rozilik bildirasiz',
     },
     en: {
       subtitle: 'Practice math every day',
@@ -38,6 +45,11 @@ function Auth({ lang, setLang }) {
       teen: '🧑 Teenager', teenSub: 'Ages 16-25',
       parent: '👨‍👩‍👧 Parent', parentSub: 'I monitor my child',
       next: 'Continue',
+      agreeText: 'By continuing, you agree to our',
+      privacy: 'Privacy Policy',
+      and: 'and',
+      terms: 'Terms of Service',
+      agreeEnd: '',
     },
     ru: {
       subtitle: 'Занимайтесь математикой каждый день',
@@ -47,7 +59,12 @@ function Auth({ lang, setLang }) {
       teen: '🧑 Студент', teenSub: '16-25 лет',
       parent: '👨‍👩‍👧 Родитель', parentSub: 'Слежу за ребёнком',
       next: 'Продолжить',
-    }
+      agreeText: 'Продолжая, вы соглашаетесь с',
+      privacy: 'Политикой конфиденциальности',
+      and: 'и',
+      terms: 'Условиями использования',
+      agreeEnd: '',
+        }
   }
 const t = text[lang] || text.uz
 
@@ -160,6 +177,17 @@ const t = text[lang] || text.uz
           <button onClick={handleSignIn} disabled={loading} className="w-full bg-[#1a3a2a] text-white py-3 rounded-2xl font-medium hover:opacity-90 transition mb-4 disabled:opacity-50">
             {loading ? '...' : (lang === 'uz' ? 'Kirish' : lang === 'ru' ? 'Войти' : 'Sign In')}
           </button>
+          <p className="text-xs text-gray-400 text-center mt-6 px-4 leading-relaxed">
+        {t.agreeText}{' '}
+        <Link to="/privacy" className="text-[#1D9E75] underline hover:text-[#0F6E56]">
+  {t.privacy}
+</Link>
+        {' '}{t.and}{' '}
+        <Link to="/terms" className="text-[#1D9E75] underline hover:text-[#0F6E56]">
+  {t.terms}
+</Link>
+        {t.agreeEnd}
+      </p>
           <p className="text-center text-sm text-gray-500">
             {lang === 'uz' ? 'Hisob yo\'qmi? ' : lang === 'ru' ? 'Нет аккаунта? ' : 'No account? '}
             <span onClick={handleSignUp} className="text-[#1a3a2a] font-medium cursor-pointer hover:underline">
@@ -225,6 +253,8 @@ function App() {
       <Route path="/language" element={session ? <Language lang={lang} setLang={setLang} /> : <Auth lang={lang} setLang={setLang} />} />
       <Route path="/statistics" element={session ? <Statistics lang={lang} /> : <Auth lang={lang} setLang={setLang} />} />
       <Route path="/topics" element={session ? <Topics lang={lang} /> : <Auth lang={lang} setLang={setLang} />} />
+      <Route path="/privacy" element={<Privacy lang={lang} />} />
+      <Route path="/terms" element={<Terms lang={lang} />} />
     </Routes>
   )
 }
