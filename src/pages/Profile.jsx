@@ -62,11 +62,14 @@ function Profile({ lang, setLang }) {
     const trimmed = nameInput.trim()
     if (!trimmed) return
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setSaving(false); return }
-    const { error } = await supabase.from('profiles').update({ full_name: trimmed }).eq('id', user.id)
+
+    const { error } = await supabase.rpc('update_profile_name', { new_name: trimmed })
+
     setSaving(false)
-    if (error) { console.error('name update error:', error); return }
+    if (error) {
+      console.error('name update error:', error)
+      return
+    }
     setFullName(trimmed)
     setEditingName(false)
   }
@@ -103,7 +106,7 @@ function Profile({ lang, setLang }) {
 
   async function disableReminder() {
     setTogglingReminder(true)
-    const { error } = await supabase.from('profiles').update({ reminder_enabled: false }).eq('id', userId)
+    const { error } = await supabase.rpc('set_reminder_enabled', { enabled: false })
     setTogglingReminder(false)
     if (error) { console.error('reminder disable error:', error); return }
     setReminderEnabled(false)

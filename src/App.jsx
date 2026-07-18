@@ -187,13 +187,10 @@ function App() {
   // Tilni bazaga ham saqlaymiz (foydalanuvchi kirgan bo'lsa)
   useEffect(() => {
     async function saveLang() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      await supabase
-        .from('profiles')
-        .update({ lang })
-        .eq('id', user.id)
-    }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  await supabase.rpc('update_profile_lang', { new_lang: lang })
+}
     saveLang()
   }, [lang])
 

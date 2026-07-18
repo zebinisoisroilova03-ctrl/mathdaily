@@ -52,10 +52,7 @@ function Home({ lang }) {
       // Timezone'ni saqlaymiz (o'zgargan bo'lsa yoki hali yo'q bo'lsa)
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
       if (tz && profile.timezone !== tz) {
-        await supabase
-          .from('profiles')
-          .update({ timezone: tz })
-          .eq('id', user.id)
+        await supabase.rpc('update_profile_timezone', { new_tz: tz })
       }
 
       setStats({
@@ -73,7 +70,7 @@ const accuracy = stats.total_solved > 0
   ? Math.min(Math.round((stats.total_correct / stats.total_solved) * 100), 100)
   : 0
 
-  const t = {
+  const t = { 
     uz: {
       greeting: 'Xush kelibsiz!',
       nav: { home: 'Bosh', practice: 'Mashq', topics: 'Mavzular', plans: 'Tariflar', profile: 'Profil' },
