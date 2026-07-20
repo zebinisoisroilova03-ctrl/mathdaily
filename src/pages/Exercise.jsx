@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 
 const FREE_LIMIT = 10
-const MAX_TYPE = 6
 const STREAK_TO_ADVANCE = 3
 
-const UZ_VIDEO = 'https://www.youtube.com/watch?v=8y4A2evS1hk'  // O'zbekiston
-const RU_VIDEO = 'https://www.youtube.com/watch?v=GERNxLLfwGM'  // CIS — rus
-const EN_VIDEO = 'https://youtu.be/C38B33ZywWs'                 // Qolgan — ingliz
+// Hozircha bitta bo'lim. Kelajakda Topics'dan uzatiladi.
+const DEFAULT_TOPIC = 'integers'
+
+const UZ_VIDEO = 'https://www.youtube.com/watch?v=8y4A2evS1hk'
+const RU_VIDEO = 'https://www.youtube.com/watch?v=GERNxLLfwGM'
+const EN_VIDEO = 'https://youtu.be/C38B33ZywWs'
 
 const CIS_TIMEZONES = [
   'Europe/Moscow', 'Europe/Kaliningrad', 'Europe/Samara', 'Europe/Volgograd', 'Europe/Saratov', 'Europe/Astrakhan', 'Europe/Ulyanovsk', 'Europe/Kirov',
@@ -33,66 +35,10 @@ function getVideoLink() {
   }
 }
 
-const exercises = [
-  // 1-tur: −(−a) − (−b)
-  { question: '−(−3) − (−3)', answer: 6, options: [7, 5, 6, 8], type: 1 },
-  { question: '−(−3) − (−2)', answer: 5, options: [5, 7, 4, 6], type: 1 },
-  { question: '−(−3) − (−1)', answer: 4, options: [5, 4, 6, 3], type: 1 },
-  { question: '−(−2) − (−3)', answer: 5, options: [6, 5, 4, 7], type: 1 },
-  { question: '−(−2) − (−2)', answer: 4, options: [3, 6, 5, 4], type: 1 },
-  { question: '−(−2) − (−1)', answer: 3, options: [5, 3, 2, 4], type: 1 },
-  { question: '−(−1) − (−3)', answer: 4, options: [3, 5, 4, 6], type: 1 },
-  { question: '−(−1) − (−2)', answer: 3, options: [3, 2, 5, 4], type: 1 },
-  { question: '−(−1) − (−1)', answer: 2, options: [3, 2, 4, 1], type: 1 },
-  // 2-tur: −(−a) − 0
-  { question: '−(−3) − 0', answer: 3, options: [4, 5, 2, 3], type: 2 },
-  { question: '−(−2) − 0', answer: 2, options: [4, 3, 2, 1], type: 2 },
-  { question: '−(−1) − 0', answer: 1, options: [2, 1, 0, 3], type: 2 },
-  // 3-tur: −(−a) − b
-  { question: '−(−3) − 1', answer: 2, options: [3, 4, 2, 1], type: 3 },
-  { question: '−(−3) − 2', answer: 1, options: [2, 1, 3, 0], type: 3 },
-  { question: '−(−3) − 3', answer: 0, options: [-1, 2, 1, 0], type: 3 },
-  { question: '−(−2) − 1', answer: 1, options: [1, 3, 2, 0], type: 3 },
-  { question: '−(−2) − 2', answer: 0, options: [0, 2, 1, -1], type: 3 },
-  { question: '−(−2) − 3', answer: -1, options: [-2, -1, 1, 0], type: 3 },
-  { question: '−(−1) − 1', answer: 0, options: [0, -1, 2, 1], type: 3 },
-  { question: '−(−1) − 2', answer: -1, options: [0, 1, -2, -1], type: 3 },
-  { question: '−(−1) − 3', answer: -2, options: [0, -1, -2, -3], type: 3 },
-  // 4-tur: −0 − ...
-  { question: '−0 − (−3)', answer: 3, options: [2, 3, 5, 4], type: 4 },
-  { question: '−0 − (−2)', answer: 2, options: [3, 2, 4, 1], type: 4 },
-  { question: '−0 − (−1)', answer: 1, options: [3, 1, 0, 2], type: 4 },
-  { question: '−0 − 0', answer: 0, options: [-1, 1, 2, 0], type: 4 },
-  { question: '−0 − 1', answer: -1, options: [1, -1, 0, -2], type: 4 },
-  { question: '−0 − 2', answer: -2, options: [-2, -1, -3, 0], type: 4 },
-  { question: '−0 − 3', answer: -3, options: [-2, -3, -4, -1], type: 4 },
-  // 5-tur: −a − (−b)
-  { question: '−1 − (−3)', answer: 2, options: [2, 3, 1, 4], type: 5 },
-  { question: '−1 − (−2)', answer: 1, options: [0, 2, 3, 1], type: 5 },
-  { question: '−1 − (−1)', answer: 0, options: [-1, 1, 0, 2], type: 5 },
-  { question: '−2 − (−3)', answer: 1, options: [2, 3, 1, 0], type: 5 },
-  { question: '−2 − (−2)', answer: 0, options: [2, 1, -1, 0], type: 5 },
-  { question: '−2 − (−1)', answer: -1, options: [0, -2, 1, -1], type: 5 },
-  { question: '−3 − (−3)', answer: 0, options: [0, 2, -1, 1], type: 5 },
-  { question: '−3 − (−2)', answer: -1, options: [-1, 0, -2, 1], type: 5 },
-  { question: '−3 − (−1)', answer: -2, options: [-3, 0, -2, -1], type: 5 },
-  // 6-tur: −a − b
-  { question: '−1 − 0', answer: -1, options: [0, -1, -2, 1], type: 6 },
-  { question: '−1 − 1', answer: -2, options: [0, -3, -1, -2], type: 6 },
-  { question: '−1 − 2', answer: -3, options: [-2, -3, -4, -1], type: 6 },
-  { question: '−1 − 3', answer: -4, options: [-3, -2, -5, -4], type: 6 },
-  { question: '−2 − 0', answer: -2, options: [-3, 0, -2, -1], type: 6 },
-  { question: '−2 − 1', answer: -3, options: [-3, -2, -1, -4], type: 6 },
-  { question: '−2 − 2', answer: -4, options: [-4, -3, -5, -2], type: 6 },
-  { question: '−2 − 3', answer: -5, options: [-3, -4, -6, -5], type: 6 },
-  { question: '−3 − 0', answer: -3, options: [-1, -4, -3, -2], type: 6 },
-  { question: '−3 − 1', answer: -4, options: [-4, -3, -2, -5], type: 6 },
-  { question: '−3 − 2', answer: -5, options: [-4, -3, -6, -5], type: 6 },
-  { question: '−3 − 3', answer: -6, options: [-6, -7, -5, -4], type: 6 },
-]
-
 function Exercise({ lang, mode = 'practice' }) {
   const navigate = useNavigate()
+  const [exercises, setExercises] = useState([])   // bazadan keladi
+  const [maxType, setMaxType] = useState(1)         // bo'limning tur soni
   const [currentType, setCurrentType] = useState(1)
   const [ex, setEx] = useState(null)
   const [selected, setSelected] = useState(null)
@@ -106,28 +52,28 @@ function Exercise({ lang, mode = 'practice' }) {
   const [seenInType, setSeenInType] = useState([])
 
   // Masala tanlash: Practice — o'tilgan turlar aralash, Topics — faqat joriy tur
-  function pickQuestion(type, seen) {
-    let pool
+  function pickQuestion(type, seen, pool) {
+    let filtered
     if (mode === 'practice') {
-      pool = exercises.filter((e) => e.type <= type)
+      filtered = pool.filter((e) => e.type <= type)
     } else {
-      pool = exercises.filter((e) => e.type === type)
+      filtered = pool.filter((e) => e.type === type)
     }
-    const unseen = pool.filter((e) => !seen.includes(e.question))
-    const source = unseen.length > 0 ? unseen : pool
+    const unseen = filtered.filter((e) => !seen.includes(e.question))
+    const source = unseen.length > 0 ? unseen : filtered
+    if (source.length === 0) return null
     return source[Math.floor(Math.random() * source.length)]
   }
 
-  // Turdan o'tishni hisoblaymiz (faqat Topics uchun)
-  function computeNextType(newConsecutive, newSeen) {
-    const poolSize = exercises.filter((e) => e.type === currentType).length
+  function computeNextType(newConsecutive, newSeen, pool, type, max) {
+    const poolSize = pool.filter((e) => e.type === type).length
     const advanceByStreak = newConsecutive >= STREAK_TO_ADVANCE
     const advanceBySeen = newSeen.length >= poolSize
     if (advanceByStreak || advanceBySeen) {
-      if (currentType >= MAX_TYPE) return 'completed'
-      return currentType + 1
+      if (type >= max) return 'completed'
+      return type + 1
     }
-    return currentType
+    return type
   }
 
   useEffect(() => {
@@ -135,6 +81,7 @@ function Exercise({ lang, mode = 'practice' }) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
 
+      // Profil (limit + current_type)
       const { data: profile } = await supabase
         .from('profiles')
         .select('current_type, today_solved, today_date, is_premium')
@@ -143,6 +90,7 @@ function Exercise({ lang, mode = 'practice' }) {
 
       if (!profile) { setLoading(false); return }
 
+      // Limit tekshiruvi
       const today = new Date().toISOString().split('T')[0]
       if (!profile.is_premium && profile.today_date === today && profile.today_solved >= FREE_LIMIT) {
         setLimitReached(true)
@@ -150,9 +98,36 @@ function Exercise({ lang, mode = 'practice' }) {
         return
       }
 
+      // Bo'lim ma'lumoti (max_type)
+      const { data: topic } = await supabase
+        .from('topics')
+        .select('max_type')
+        .eq('id', DEFAULT_TOPIC)
+        .single()
+
+      const topicMaxType = topic?.max_type || 1
+
+      // Masalalarni bazadan yuklaymiz
+      const { data: rows, error } = await supabase
+        .from('exercises')
+        .select('type, question, answer, options')
+        .eq('topic_id', DEFAULT_TOPIC)
+        .order('order_index', { ascending: true })
+
+      if (error || !rows || rows.length === 0) {
+        console.error('exercises load error:', error)
+        setLoading(false)
+        return
+      }
+
       const type = profile.current_type || 1
-      setCurrentType(type)
-      setEx(pickQuestion(type, []))
+      // current_type bo'limning max_type'idan oshmasin (himoya)
+      const safeType = Math.min(type, topicMaxType)
+
+      setExercises(rows)
+      setMaxType(topicMaxType)
+      setCurrentType(safeType)
+      setEx(pickQuestion(safeType, [], rows))
       setLoading(false)
     }
     init()
@@ -226,7 +201,7 @@ function Exercise({ lang, mode = 'practice' }) {
     let nextTypeForServer = null
 
     if (mode === 'topic') {
-      result = computeNextType(newConsecutive, newSeen)
+      result = computeNextType(newConsecutive, newSeen, exercises, currentType, maxType)
       nextTypeForServer = result === 'completed' ? currentType : result
     }
 
@@ -251,7 +226,6 @@ function Exercise({ lang, mode = 'practice' }) {
     setConsecutiveCorrect(newConsecutive)
     setSeenInType(newSeen)
 
-    // Faqat Topics rejimida turdan turga o'tish / tabrik
     if (mode === 'topic') {
       if (result === 'completed') {
         setCompleted('pending')
@@ -273,7 +247,7 @@ function Exercise({ lang, mode = 'practice' }) {
       setCompleted(true)
       return
     }
-    setEx(pickQuestion(currentType, seenInType))
+    setEx(pickQuestion(currentType, seenInType, exercises))
     setSelected(null)
     setAnswered(false)
   }
@@ -326,7 +300,7 @@ function Exercise({ lang, mode = 'practice' }) {
 
       <div className="flex items-center justify-between mb-2">
         {mode === 'topic' ? (
-          <span className="text-sm text-gray-500">{text.typeLabel} {currentType}/{MAX_TYPE}</span>
+          <span className="text-sm text-gray-500">{text.typeLabel} {currentType}/{maxType}</span>
         ) : (
           <span className="text-sm text-gray-500">{text.practiceLabel}</span>
         )}
@@ -335,7 +309,7 @@ function Exercise({ lang, mode = 'practice' }) {
 
       {mode === 'topic' ? (
         <div className="w-full h-2 bg-gray-100 rounded-full mb-6">
-          <div className="h-2 bg-[#1D9E75] rounded-full transition-all" style={{ width: `${(currentType / MAX_TYPE) * 100}%` }}></div>
+          <div className="h-2 bg-[#1D9E75] rounded-full transition-all" style={{ width: `${(currentType / maxType) * 100}%` }}></div>
         </div>
       ) : (
         <div className="mb-6"></div>
