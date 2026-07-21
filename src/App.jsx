@@ -10,6 +10,7 @@ import Statistics from './pages/Statistics'
 import Topics from './pages/Topics'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
+import ResetPassword from './pages/ResetPassword'
 
 // ============ AUTH (Welcome + Role + Login) ============
 function Auth({ lang, setLang }) {
@@ -76,6 +77,24 @@ const t = text[lang] || text.uz
     if (error) setAuthError(error.message)
     else navigate('/home')
   }
+
+  async function handleForgotPassword() {
+  if (!email) {
+    setAuthError(lang === 'uz' ? 'Avval email kiriting' : lang === 'ru' ? 'Сначала введите email' : 'Enter your email first')
+    return
+  }
+  setAuthError('')
+  setLoading(true)
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/reset-password',
+  })
+  setLoading(false)
+  if (error) {
+    setAuthError(error.message)
+  } else {
+    setAuthError(lang === 'uz' ? '✅ Parolni tiklash havolasi emailingizga yuborildi' : lang === 'ru' ? '✅ Ссылка для сброса пароля отправлена на email' : '✅ Password reset link sent to your email')
+  }
+}
 
   async function handleSignIn() {
     setAuthError('')
@@ -173,10 +192,22 @@ const t = text[lang] || text.uz
             <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={lang === 'uz' ? 'Parol' : lang === 'ru' ? 'Пароль' : 'Password'} className="w-full border border-gray-200 rounded-2xl px-4 py-3 outline-none focus:border-[#1a3a2a] transition" />
             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600">{showPassword ? '🙈' : '👁️'}</button>
           </div>
+          <button onClick={handleForgotPassword}
+  className="text-sm text-[#1D9E75] hover:underline mb-4 block mx-auto">
+  {lang === 'uz' ? 'Parolni unutdingizmi?' : lang === 'ru' ? 'Забыли пароль?' : 'Forgot password?'}
+</button>
           {authError && <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 mb-3 text-sm text-red-600">{authError}</div>}
           <button onClick={handleSignIn} disabled={loading} className="w-full bg-[#1a3a2a] text-white py-3 rounded-2xl font-medium hover:opacity-90 transition mb-4 disabled:opacity-50">
             {loading ? '...' : (lang === 'uz' ? 'Kirish' : lang === 'ru' ? 'Войти' : 'Sign In')}
           </button>
+      
+          <p className="text-center text-sm text-gray-500">
+            {lang === 'uz' ? 'Hisob yo\'qmi? ' : lang === 'ru' ? 'Нет аккаунта? ' : 'No account? '}
+            <span onClick={handleSignUp} className="text-[#1a3a2a] font-medium cursor-pointer hover:underline">
+              {lang === 'uz' ? 'Ro\'yxatdan o\'ting' : lang === 'ru' ? 'Зарегистрироваться' : 'Sign up'}
+            </span>
+          </p>
+
           <p className="text-xs text-gray-400 text-center mt-6 px-4 leading-relaxed">
         {t.agreeText}{' '}
         <Link to="/privacy" className="text-[#1D9E75] underline hover:text-[#0F6E56]">
@@ -188,12 +219,6 @@ const t = text[lang] || text.uz
 </Link>
         {t.agreeEnd}
       </p>
-          <p className="text-center text-sm text-gray-500">
-            {lang === 'uz' ? 'Hisob yo\'qmi? ' : lang === 'ru' ? 'Нет аккаунта? ' : 'No account? '}
-            <span onClick={handleSignUp} className="text-[#1a3a2a] font-medium cursor-pointer hover:underline">
-              {lang === 'uz' ? 'Ro\'yxatdan o\'ting' : lang === 'ru' ? 'Зарегистрироваться' : 'Sign up'}
-            </span>
-          </p>
         </div>
       )}
     </div>
@@ -255,6 +280,7 @@ useEffect(() => {
       <Route path="/topics" element={session ? <Topics lang={lang} /> : <Auth lang={lang} setLang={setLang} />} />
       <Route path="/privacy" element={<Privacy lang={lang} />} />
       <Route path="/terms" element={<Terms lang={lang} />} />
+      <Route path="/reset-password" element={<ResetPassword lang={lang} />} />
     </Routes>
   )
 }
