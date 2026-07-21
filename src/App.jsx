@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Routes, Route, useNavigate, Link } from 'react-router-dom'
+import { Routes, Route, useNavigate, Link, Navigate  } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import Home from './pages/Home'
 import Exercise from './pages/Exercise'
@@ -223,19 +223,19 @@ function App() {
   }, [lang])
 
   // Sessiyani kuzatamiz
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setLoadingSession(false)
-    })
+useEffect(() => {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    setSession(session)
+    setLoadingSession(false)
+  })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session)
-      if (event === 'SIGNED_OUT') navigate('/')
-    })
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    setSession(session)
+    if (event === 'SIGNED_OUT') navigate('/')
+  })
 
-    return () => subscription.unsubscribe()
-  }, [])
+  return () => subscription.unsubscribe()
+}, [])
 
   // Sessiya tekshirilayotganda — bo'sh ekran (miltillashning oldini oladi)
   if (loadingSession) {
@@ -244,7 +244,7 @@ function App() {
 
   return (
 <Routes>
-      <Route path="/" element={<Auth lang={lang} setLang={setLang} />} />
+      <Route path="/" element={session ? <Navigate to="/home" replace /> : <Auth lang={lang} setLang={setLang} />} />
       <Route path="/home" element={session ? <Home lang={lang} /> : <Auth lang={lang} setLang={setLang} />} />
       <Route path="/practice" element={session ? <Exercise lang={lang} mode="practice" /> : <Auth lang={lang} setLang={setLang} />} />
       <Route path="/topic" element={session ? <Exercise lang={lang} mode="topic" /> : <Auth lang={lang} setLang={setLang} />} />
